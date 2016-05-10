@@ -22,14 +22,8 @@
   },
   "homepage": "https://github.com/Bairongs/br-fedtools#readme",
   "contributors": [
-    {
-      "name": "dezhao.chen",
-      "email": ""
-    },
-    {
-      "name": "leo.yy",
-      "email": "375543027@qq.com"
-    }
+    "dezhao.chen",
+    "leo.yy <375543027@qq.com>"
   ],
   "dependencies": {
     "babel-core": "^5.8.25",
@@ -69,5 +63,11 @@
     "jsx-loader": "^0.13.2",
     "mkdirp": "^0.5.1",
     "webpack": "^1.13.0"
-  }
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "keywords": [
+    "fedtools"
+  ]
 }
