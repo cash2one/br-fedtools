@@ -14,7 +14,6 @@ var Webpack = require("webpack");
 var webpackConfig = require('./webpack.config');
 
 var ROOT_PATH = path.resolve(__dirname);
-console.log('__dirname:', __dirname);
 
 gulp.task("webpack", function (callback) {
     Webpack(webpackConfig, function (err, stats) {

@@ -1,33 +1,55 @@
 {
-  "name": "coin-webdev",
-  "version": "0.1.0",
-  "description": "coin web dev",
+  "name": "br-bid",
+  "version": "0.0.1",
+  "description": "百融-前端开发工具",
   "main": "index.js",
-  "scripts": {
-    "postinstall": "/usr/local/bin/coin-webdev init",
-    "dev": "node index.js"
-  },
   "bin": {
-    "dev": "./index.js",
-    "build": "./app/build"
+    "fedtools": "bin/index.js",
+    "bid": "bin/index.js"
   },
-  "author": "dezhao.chen",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --harmony ./bin/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bairongs/br-fedtools.git"
+  },
+  "author": "leo.yy",
   "license": "ISC",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+  "bugs": {
+    "url": "https://github.com/Bairongs/br-fedtools/issues"
   },
+  "homepage": "https://github.com/Bairongs/br-fedtools#readme",
+  "contributors": [
+    {
+      "name": "dezhao.chen",
+      "email": ""
+    },
+    {
+      "name": "leo.yy",
+      "email": "375543027@qq.com"
+    }
+  ],
   "dependencies": {
     "babel-core": "^5.8.25",
     "babel-loader": "^5.3.2",
+    "cli-color": "^1.0.0",
+    "colors": "*",
+    "commander": "^2.8.1",
     "css-loader": "^0.23.0",
+    "expose-loader": "^0.7.1",
     "express": "~4.13.4",
+    "fs-extra": "^0.30.0",
     "gulp": "^3.9.1",
     "less": "^2.5.3",
     "less-loader": "^2.2.2",
+    "less-middleware": "^2.1.0",
     "less-plugin-clean-css": "~1.5.1",
     "style-loader": "^0.13.0",
     "webpack": "^1.12.15",
-    "webpack-dev-middleware": "^1.6.1"
+    "webpack-dev-middleware": "^1.6.1",
+    "webpack-zepto": "0.0.1"
   },
   "devDependencies": {
     "ejs-loader": "^0.2.1",
@@ -41,6 +63,7 @@
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
     "gulp-webpack": "^1.5.0",
+    "imports-loader": "^0.6.5",
     "jsx-loader": "^0.13.2",
     "mkdirp": "^0.5.1",
     "webpack": "^1.13.0"
