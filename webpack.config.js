@@ -55,21 +55,21 @@ module.exports = {
 		root: [path.join(currentBase, './node_modules'), path.join(process.cwd(), "./node_modules")],
 		extensions: ['', '.js', '.json', '.html'],
 		alias: { // 别名
-			zepto: 'webpack-zepto'
-				// 	underscore: 'node_modules/underscore/underscore-min.js'
+			zepto: 'webpack-zepto',
+			underscore: 'underscore'
 		}
 	},
 
 	plugins: [
 		//提供全局的变量，在模块中使用无需用require引入
 
-		new Webpack.ProvidePlugin({ // 如果不自动注入zepto，则需要用户在入口js手动写入 var $ = require('zepto');
+		/*new Webpack.ProvidePlugin({ // 注释此段代码，将不自动注入zepto，需要用户在js入口处手动写入 var $ = require('zepto');
 			$: "webpack-zepto"
 		}),
 
-		new Webpack.ProvidePlugin({
+		new Webpack.ProvidePlugin({ // 注释此段代码，将不自动注入zepto，需要用户在js入口处手动写入 var _ = require('underscore');
 			_: "underscore"
-		}),
+		}),*/
 
 		new Webpack.NoErrorsPlugin()
 	]
