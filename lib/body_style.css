@@ -1,0 +1,19 @@
+/* body style */
+body{
+	background-color: #fafafa;
+}
+ul li{
+	float:left; 
+	width:300px; 
+	padding:5px;
+	font-family: "Microsoft YaHei";
+}
+a{
+	color:blue; 
+	text-decoration:none;
+	display: block;
+	padding:5px 0;
+}
+a:hover{
+	background-color: #eee;
+}
