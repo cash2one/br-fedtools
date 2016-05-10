@@ -38,6 +38,7 @@
     "colors": "*",
     "commander": "^2.8.1",
     "css-loader": "^0.23.0",
+    "ejs-loader": "^0.2.1",
     "expose-loader": "^0.7.1",
     "express": "~4.13.4",
     "fs-extra": "^0.30.0",
@@ -47,6 +48,7 @@
     "less-middleware": "^2.1.0",
     "less-plugin-clean-css": "~1.5.1",
     "style-loader": "^0.13.0",
+    "underscore": "^1.8.3",
     "webpack": "^1.12.15",
     "webpack-dev-middleware": "^1.6.1",
     "webpack-zepto": "0.0.1"
