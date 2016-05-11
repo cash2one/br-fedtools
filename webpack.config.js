@@ -52,11 +52,12 @@ module.exports = {
 	},
 	resolve: {
 		//require时候自动补全扩展名;
-		root: [path.join(currentBase, './node_modules'), path.join(process.cwd(), "./node_modules")],
+		root: [path.join(currentBase, './node_modules'), path.join(process.cwd(), "./node_modules"), path.join(process.cwd(), "./src/c/common")],
 		extensions: ['', '.js', '.json', '.html'],
 		alias: { // 别名
 			zepto: 'webpack-zepto',
-			underscore: 'underscore'
+			underscore: 'underscore',
+			'@bairong': path.join(process.cwd(), "./src/c/common")
 		}
 	},
 

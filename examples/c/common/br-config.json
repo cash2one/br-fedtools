@@ -1,0 +1,7 @@
+{
+	slider: {
+		'alias': '@bairong/slider',
+		'gitRepo': '',
+		'desc': '这是slider的描述'
+	}
+}
