@@ -1,19 +1,21 @@
 var path = require('path');
 var Webpack = require('webpack');
 var webpackDevMiddleware = require('webpack-dev-middleware');
+// var HtmlWebpackPlugin = require('html-webpack-plugin');
 
-var currentBase = __dirname; //process.cwd();
+var envPath = require('./lib/util/env');
+
 var entryDir = 'src';
 var outputDir = 'build';
-var context = path.join(process.cwd(), entryDir); // 必须是绝对路径
+
+// var context = path.join(process.cwd(), entryDir); // 必须是绝对路径
 module.exports = {
 	// 定义全集load 目录; 吧node_modules目录加入到require中;
-	// root: [context, path.join(currentBase, './node_modules')],
+	// root: [context, path.join(envPath.rootPath, './node_modules')],
 	entry: {
-		'p/index/index': './src/p/index/index.js',
 	},
 	output: {
-		path: path.resolve(currentBase, 'build'),
+		path: path.resolve(envPath.cwdPath, 'build/src'),
 		filename: '[name].js'
 	},
 	resolveLoader: {
@@ -33,11 +35,11 @@ module.exports = {
 			}, {
 				test: /\.js$/,
 				loaders: ['babel-loader']
-					// exclude: path.join(currentBase, './node_modules')
+					// exclude: path.join(envPath.rootPath, './node_modules')
 			}, {
 				test: /\.ejs$/,
 				loader: "ejs-loader?variable=data",
-				exclude: path.join(currentBase, './node_modules')
+				exclude: path.join(envPath.rootPath, './node_modules')
 			}, {
 				test: /\.less$/,
 				loader: "style!css!less-loader"
@@ -52,12 +54,12 @@ module.exports = {
 	},
 	resolve: {
 		//require时候自动补全扩展名;
-		root: [path.join(currentBase, './node_modules'), path.join(process.cwd(), "./node_modules"), path.join(process.cwd(), "./src/c/common")],
+		root: [path.join(envPath.rootPath, './node_modules'), path.join(envPath.cwdPath, "./node_modules"), path.join(envPath.cwdPath, "./src/c/common")],
 		extensions: ['', '.js', '.json', '.html'],
 		alias: { // 别名
 			zepto: 'webpack-zepto',
 			underscore: 'underscore',
-			'@bairong': path.join(process.cwd(), "./src/c/common")
+			'@bairong': path.join(envPath.cwdPath, "./src/c/common")
 		}
 	},
 

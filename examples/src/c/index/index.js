@@ -10,14 +10,14 @@ Index.prototype = {
         //传入渲染的包裹层
         this.el = config.el;
         //渲染
-        this.render();
+        this.render()
     },
 
     render: function () {
         var _html = tpl({
             title: 'Hello World'
         });
-        this.el[0].innerHTML = _html;
+        this.el[0].innerHTML = _html
     }
 };
 

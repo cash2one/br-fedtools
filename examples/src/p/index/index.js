@@ -1,6 +1,7 @@
 var $ = require('zepto');
 var Index = require('../../c/index/index');
 new Index({
-    el:$('h2')
+	el: $('h2')
 });
-console.log($('h2'))
+console.log($('h2'));
+alert(0)

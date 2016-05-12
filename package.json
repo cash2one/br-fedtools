@@ -36,20 +36,16 @@
     "expose-loader": "^0.7.1",
     "express": "~4.13.4",
     "fs-extra": "^0.30.0",
-    "gulp": "^3.9.1",
     "less": "^2.5.3",
     "less-loader": "^2.2.2",
     "less-middleware": "^2.1.0",
     "less-plugin-clean-css": "~1.5.1",
+    "shelljs": "^0.7.0",
     "style-loader": "^0.13.0",
     "underscore": "^1.8.3",
     "webpack": "^1.12.15",
     "webpack-dev-middleware": "^1.6.1",
-    "webpack-zepto": "0.0.1"
-  },
-  "devDependencies": {
-    "ejs-loader": "^0.2.1",
-    "fs-extra": "^0.28.0",
+    "webpack-zepto": "0.0.1",
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",
     "gulp-jshint": "^2.0.0",
@@ -59,10 +55,12 @@
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
     "gulp-webpack": "^1.5.0",
+    "br-bid": "*"
+  },
+  "devDependencies": {
     "imports-loader": "^0.6.5",
     "jsx-loader": "^0.13.2",
-    "mkdirp": "^0.5.1",
-    "webpack": "^1.13.0"
+    "mkdirp": "^0.5.1"
   },
   "directories": {
     "example": "examples"

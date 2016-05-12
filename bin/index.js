@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var colors = require('colors');
 var appInfo = require('./../package.json');
 var webServer = require('./../lib/server');
 var fileGenerator = require('./../lib/fileGenerator');
 var npmInstall = require('./../lib/util/auto-npm-install');
 var path = require('path');
+require('shelljs/global');
+
+var colors = require('cli-color');
+var errorRed = colors.red;
+var successGreen = colors.green;
+var infoBlue = colors.blue;
 
 program
 	.allowUnknownOption() //不报错误
@@ -16,7 +21,7 @@ program
 	.option('-l, --local', '本地构建')
 	.option('-ol, --online', '远端构建')
 	.option('-p, --port [type]', '监听端口', '3333')
-	.option('-q, --quiet', '已安静模式进行模块更新')
+	.option('-q, --quiet', '安静模式')
 	.option('-f, --force [type]', '强制重新安装全部模块')
 	.action(function() {
 		console.log(" _____ _____ ____ _____           _     ");
@@ -36,9 +41,17 @@ program
 		if (program.online) { // 远端构建
 			env = '远端';
 		} else { // 本地构建
-
+			var initTime = new Date().getTime();
+			exec('gulp', {
+				async: true,
+				silent: program.quiet
+			}, function(code, output) {
+				var nowTime = new Date().getTime();
+				console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+				console.log(successGreen('本地构建完毕!'));
+			});
 		}
-		console.log(colors.green('开启' + env + '构建'));
+		console.log(successGreen('开启' + env + '构建'));
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
@@ -54,7 +67,7 @@ program
 	.alias('d')
 	.description('进行开发')
 	.action(function(cmd, options) {
-		console.log(colors.green('开启开发者模式'));
+		console.log(successGreen('开启开发者模式'));
 		webServer.start({
 			port: program.port
 		});
@@ -73,9 +86,19 @@ program
 	.alias('i')
 	.description('初始化工程目录')
 	.action(function(cmd, options) {
-		console.log(colors.green('正在初始化工程目录ing...'));
-		var dirname = path.join(process.cwd(), './src');
-		fileGenerator(dirname);
+		console.log(successGreen('正在初始化工程目录ing...'));
+		var dirname = path.join(process.cwd(), './');
+		fileGenerator(dirname, function() {
+			console.log(infoBlue('正在安装构建依赖...'));
+			var initTime = new Date().getTime();
+			exec('npm install webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid', {
+				async: true,
+				silent: program.quiet
+			}, function(code, output) {
+				var nowTime = new Date().getTime();
+				console.log(successGreen('安装依赖完成!'),infoBlue('共耗时:' + (nowTime - initTime), 's'));
+			});
+		});
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
@@ -90,7 +113,7 @@ program
 	.alias('u')
 	.description('更新全局依赖模块')
 	.action(function(cmd, options) {
-		console.log(colors.green('正在更新全局依赖模块,请稍后'));
+		console.log(successGreen('正在更新全局依赖模块,请稍后'));
 		var settings = {
 			quiet: false
 		};
@@ -100,11 +123,11 @@ program
 		if (program.force) { // 强制更新，则重新安装全部全局依赖npm模块
 			settings.moduleName = program.force;
 			npmInstall.install(settings, function() {
-				console.log(colors.green('强制更新完成'));
+				console.log(successGreen('强制更新完成'));
 			});
 		} else {
 			npmInstall.update(settings, function() {
-				console.log(colors.green('更新完成'));
+				console.log(successGreen('更新完成'));
 			});
 		}
 
