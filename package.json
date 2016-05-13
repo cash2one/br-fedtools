@@ -54,12 +54,11 @@
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
-    "gulp-webpack": "^1.5.0",
-    "br-bid": "*"
+    "jsx-loader": "^0.13.2",
+    "gulp-webpack": "^1.5.0"
   },
   "devDependencies": {
     "imports-loader": "^0.6.5",
-    "jsx-loader": "^0.13.2",
     "mkdirp": "^0.5.1"
   },
   "directories": {

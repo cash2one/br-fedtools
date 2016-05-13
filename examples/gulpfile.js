@@ -1,3 +1,9 @@
+/**
+ * 
+ * @fileOverview gulp打包入口
+ * @author leo.yy
+ * 
+ */
 var gulp = require('gulp');
 var uglify = require("gulp-uglify");
 var del = require('del');
@@ -21,16 +27,13 @@ var infoBlue = colors.blue;
 var _ = require('underscore');
 var webpackConfig = require('br-bid/webpack.config');
 var userConfig = require('br-bid/lib/util/getLocalConfig'); 
-// var userConfig = require('./../lib/util/getLocalConfig'); // TO DO REMOVE
 
 webpackConfig.entry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 
 if (_.isEmpty(webpackConfig.entry)) { 
 	// 如果config.json中没有设置相关bid-js-entry字段，则自动匹配JS入口文件，规则：匹配所有src/p/**/index.js
-	console.log('isEmpty');
+	console.log(infoBlue('config.json没有配置entry字段，将自动匹配入口文件...'));
 	var autoEntry = require('br-bid/lib/util/getEntry'); 
-	// var autoEntry = require('./../lib/util/getEntry'); // TO DO REMOVE
-	console.log(autoEntry);
 	webpackConfig.entry = _.extend(webpackConfig.entry, autoEntry);
 }
 

@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+/**
+ * 
+ * @fileOverview bash命令定义
+ * @author leo.yy
+ * 
+ */
+
 var program = require('commander');
 var appInfo = require('./../package.json');
 var webServer = require('./../lib/server');
@@ -97,7 +104,7 @@ program
 				silent: program.quiet
 			}, function(code, output) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime), 's'));
+				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime)/1000, 's'));
 			});
 		});
 
@@ -140,7 +147,7 @@ program
 				silent: program.quiet
 			}, function(code, output) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime), 's'));
+				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime)/1000, 's'));
 			});
 		}
 

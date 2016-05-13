@@ -19,13 +19,9 @@ var alias = { // 别名
 };
 alias = _.extend(alias, userConfig.alias);
 
-// var context = path.join(process.cwd(), entryDir); // 必须是绝对路径
 module.exports = {
-	// 定义全集load 目录; 吧node_modules目录加入到require中;
-	// root: [context, path.join(envPath.rootPath, './node_modules')],
 	entry: {},
 	output: {
-		// path: path.resolve(envPath.cwdPath, 'build/src'),
 		path: path.resolve(envPath.cwdPath, './build'),
 		filename: '[name].js'
 	},

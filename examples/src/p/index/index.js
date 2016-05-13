@@ -4,4 +4,3 @@ new Index({
 	el: $('h2')
 });
 console.log($('h2'));
-alert(0)
