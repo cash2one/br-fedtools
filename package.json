@@ -1,6 +1,6 @@
 {
   "name": "br-bid",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "百融-前端开发工具",
   "main": "index.js",
   "bin": {
