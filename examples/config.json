@@ -2,5 +2,8 @@
 	"bid-js-entry": {
 		"p/index/index": "./src/p/index/index.js",
 		"p/bb/index": "./src/p/bb/index.js"
+	},
+	"alias": {
+		"zepto": "webpack-zepto"
 	}
 }

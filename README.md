@@ -16,7 +16,13 @@
 
 ## 构建打包
 * 本地构建： **bid build -l (当前可用)**
+
 * 云构建： 后续开发...  **bid build (暂时不可用)**
+
+## 配置文件config.js
+* 打包配置：
+	* config.bid-js-entry字段
+
 
 ## 说明
 * 全部nodejs依赖均通过本模块的node_module进行加载。

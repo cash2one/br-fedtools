@@ -22,6 +22,7 @@ program
 	.option('-ol, --online', '远端构建')
 	.option('-p, --port [type]', '监听端口', '3333')
 	.option('-q, --quiet', '安静模式')
+	.option('-g, --global', '全局模式')
 	.option('-f, --force [type]', '强制重新安装全部模块')
 	.action(function() {
 		console.log(" _____ _____ ____ _____           _     ");
@@ -96,7 +97,7 @@ program
 				silent: program.quiet
 			}, function(code, output) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('安装依赖完成!'),infoBlue('共耗时:' + (nowTime - initTime), 's'));
+				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime), 's'));
 			});
 		});
 
@@ -113,23 +114,36 @@ program
 	.alias('u')
 	.description('更新全局依赖模块')
 	.action(function(cmd, options) {
-		console.log(successGreen('正在更新全局依赖模块,请稍后'));
-		var settings = {
-			quiet: false
-		};
-		if (program.quiet) { // 安静模式
-			settings.quiet = true;
-		}
-		if (program.force) { // 强制更新，则重新安装全部全局依赖npm模块
-			settings.moduleName = program.force;
-			npmInstall.install(settings, function() {
-				console.log(successGreen('强制更新完成'));
+		if (program.global) { // 更新全局依赖
+			console.log(successGreen('正在更新全局依赖模块,请稍后'));
+			var settings = {
+				quiet: false
+			};
+			if (program.quiet) { // 安静模式
+				settings.quiet = true;
+			}
+			if (program.force) { // 强制更新，则重新安装全部全局依赖npm模块
+				settings.moduleName = program.force;
+				npmInstall.install(settings, function() {
+					console.log(successGreen('强制更新完成'));
+				});
+			} else {
+				npmInstall.update(settings, function() {
+					console.log(successGreen('更新完成'));
+				});
+			}
+		} else { // 本地node_module依赖
+			console.log(infoBlue('正在更新本地模块...'));
+			var initTime = new Date().getTime();
+			exec('npm update webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid', {
+				async: true,
+				silent: program.quiet
+			}, function(code, output) {
+				var nowTime = new Date().getTime();
+				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime), 's'));
 			});
-		} else {
-			npmInstall.update(settings, function() {
-				console.log(successGreen('更新完成'));
-			});
 		}
+
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');

@@ -16,14 +16,23 @@ var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
 var warnYellow = colors.yellow;
+var infoBlue = colors.blue;
 
 var _ = require('underscore');
-// var webpackConfig = require('./webpack.config');
-// var userConfig = require('./lib/util/getLocalConfig');
 var webpackConfig = require('br-bid/webpack.config');
-var userConfig = require('br-bid/lib/util/getLocalConfig');
+var userConfig = require('br-bid/lib/util/getLocalConfig'); 
+// var userConfig = require('./../lib/util/getLocalConfig'); // TO DO REMOVE
 
 webpackConfig.entry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
+
+if (_.isEmpty(webpackConfig.entry)) { 
+	// 如果config.json中没有设置相关bid-js-entry字段，则自动匹配JS入口文件，规则：匹配所有src/p/**/index.js
+	console.log('isEmpty');
+	var autoEntry = require('br-bid/lib/util/getEntry'); 
+	// var autoEntry = require('./../lib/util/getEntry'); // TO DO REMOVE
+	console.log(autoEntry);
+	webpackConfig.entry = _.extend(webpackConfig.entry, autoEntry);
+}
 
 var isLintFailed = false; // lint是否失败
 
@@ -65,7 +74,7 @@ gulp.task('webpack', ['lint'], function(callback) {
 	} else {
 		console.log(warnYellow('请规范您的代码!'))
 	}
-	console.log('正在进行打包...');
+	console.log(infoBlue('现在开始打包...'));
 	Webpack(webpackConfig, function(err, stats) {
 		if (err) throw new gutil.PluginError("webpack", err);
 		gutil.log("[webpack]", stats.toString({

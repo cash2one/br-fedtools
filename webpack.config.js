@@ -2,20 +2,31 @@ var path = require('path');
 var Webpack = require('webpack');
 var webpackDevMiddleware = require('webpack-dev-middleware');
 // var HtmlWebpackPlugin = require('html-webpack-plugin');
+var userConfig = require('./lib/util/getLocalConfig');
+
+var _ = require('underscore');
 
 var envPath = require('./lib/util/env');
 
 var entryDir = 'src';
 var outputDir = 'build';
 
+
+var alias = { // 别名
+	zepto: 'webpack-zepto',
+	underscore: 'underscore',
+	'@bairong': path.join(envPath.cwdPath, "./src/c/common")
+};
+alias = _.extend(alias, userConfig.alias);
+
 // var context = path.join(process.cwd(), entryDir); // 必须是绝对路径
 module.exports = {
 	// 定义全集load 目录; 吧node_modules目录加入到require中;
 	// root: [context, path.join(envPath.rootPath, './node_modules')],
-	entry: {
-	},
+	entry: {},
 	output: {
-		path: path.resolve(envPath.cwdPath, 'build/src'),
+		// path: path.resolve(envPath.cwdPath, 'build/src'),
+		path: path.resolve(envPath.cwdPath, './build'),
 		filename: '[name].js'
 	},
 	resolveLoader: {
@@ -56,11 +67,7 @@ module.exports = {
 		//require时候自动补全扩展名;
 		root: [path.join(envPath.rootPath, './node_modules'), path.join(envPath.cwdPath, "./node_modules"), path.join(envPath.cwdPath, "./src/c/common")],
 		extensions: ['', '.js', '.json', '.html'],
-		alias: { // 别名
-			zepto: 'webpack-zepto',
-			underscore: 'underscore',
-			'@bairong': path.join(envPath.cwdPath, "./src/c/common")
-		}
+		alias: alias // 别名
 	},
 
 	plugins: [
