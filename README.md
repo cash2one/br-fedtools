@@ -44,11 +44,12 @@
 * "alias":
 	*  别名,通过别名约定，可以使我们在业务代码中直接require([key])引用js模块。
 	
-		| -----| key[JS模块别名] | value[模块npm名称\|模块在项目中的地址] |
+		| | key[JS模块别名] | value[模块npm名称 或 模块在项目中的地址] |
 		| -----| -----|:----:|
 		| node模块别名|"zepto"|"webpack-zepto"|
 		| 约定common模块别名（src/c/common）|"myslider"|"@bairong/myslider"|
 		| 上例等同于：|"myslider"|"../../c/common/myslider"|
+
 	*  通过别名的定义，我们可以在业务代码中直接使用``require([别名])``引用js模块
 	
 				var myslider = require("@bairong/myslider");
