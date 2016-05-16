@@ -1,5 +1,5 @@
 var $ = require('zepto');
-var Index = require('../../c/index/index');
+var Index = require('@br/index/index');
 new Index({
 	el: $('h2')
 });

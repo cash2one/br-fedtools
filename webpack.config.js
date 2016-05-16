@@ -15,7 +15,7 @@ var outputDir = 'build';
 var alias = { // 别名
 	zepto: 'webpack-zepto',
 	underscore: 'underscore',
-	'@bairong': path.join(envPath.cwdPath, "./src/c/common")
+	'@br': path.join(envPath.cwdPath, "./src/c")
 };
 alias = _.extend(alias, userConfig.alias);
 

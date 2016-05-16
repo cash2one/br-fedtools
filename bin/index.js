@@ -29,6 +29,7 @@ program
 	.option('-ol, --online', '远端构建')
 	.option('-p, --port [type]', '监听端口', '3333')
 	.option('-q, --quiet', '安静模式')
+	.option('-r, --react', 'React项目')
 	.option('-g, --global', '全局模式')
 	.option('-f, --force [type]', '强制重新安装全部模块')
 	.action(function() {

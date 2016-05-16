@@ -6,9 +6,23 @@
 - build 打包工程目录src/p中所有index.js文件 到 build目录中
 
 ## 安装及初始化工程
-* step.1  全局安装 **npm install br-bid -g** 
-* step.2  创建新建工程目录并进入 **mkdir project1 && cd project1** 
-* step.3  使用bid命令初始化工程 **bid init**
+
+* step.1  确保本机已经正常安装了NodeJS，以及npm可以正常使用。
+	* 检测方法：请在bash下，输入
+			
+			node -v && npm -v  // 返回两个版本号即为安装正常
+			
+			例：
+			bogon:br-fedtools leo.yy$ node -v && npm -v
+			v4.4.4
+			2.15.1
+			node环境正常
+		
+	* 安装方法请见：[NodeJS官网](http://nodejs.cn/)
+
+* step.2  全局安装 **npm install br-bid -g** 
+* step.3  创建新建工程目录并进入 **mkdir project1 && cd project1** 
+* step.4  使用bid命令初始化工程 **bid init**
   *  如果安装依赖时出现问题，请使用 bid update命令重新安装。update命令具体使用方法请看下文。
 
 ## 开发调试
@@ -32,7 +46,7 @@
 					},
 					"alias": {
 						"zepto": "webpack-zepto",
-						"myslider": "@bairong/myslider",
+						"myslider": "@br/common/myslider",
 						"myslider": "../../c/common/myslider"
 					}
 				}
@@ -53,12 +67,12 @@
 		| | key[JS模块别名] | value[模块npm名称 或 模块在项目中的地址] |
 		| -----| -----|:----:|
 		| node模块别名|"zepto"|"webpack-zepto"|
-		| 约定common模块别名（src/c/common）|"myslider"|"@bairong/myslider"|
+		| 约定common模块别名（src/c/common）|"myslider"|"@br/common/myslider"|
 		| 上例等同于：|"myslider"|"../../c/common/myslider"|
 
 	*  通过别名的定义，我们可以在业务代码中直接使用``require([别名])``引用js模块
 	
-				var myslider = require("@bairong/myslider");
+				var myslider = require("@br/common/myslider");
 				// 等同于 var myslider = require("../../c/common/myslider");
 				var $ = require("zepto");
 
