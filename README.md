@@ -1,4 +1,4 @@
-# 百融金服-前端FED工具 v0.0.3
+# 百融金服-前端FED工具
 # br-fedtools
 
 - web开发工程化工具
@@ -19,10 +19,13 @@
 
 * 云编译打包： 后续开发...  **bid build (暂时不可用)**
 
+* 注意：`使用打包功能前，请确认您已经全局安装了gulp模块： sudo npm install gulp -g `
+
 ## 配置文件config.js（打包编译、js引用）
 * 示例说明：
 	
 				{
+					"auto-entry": true,
 					"bid-js-entry": {
 						"src/p/index/index": "./src/p/index/index.js",
 						"src/p/bb/index": "./src/p/bb/index.js"
@@ -33,7 +36,10 @@
 						"myslider": "../../c/common/myslider"
 					}
 				}
-* "bid-js-entry": 
+* "auto-entry" (boolean): 
+	* true: 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
+	* false: 只根据config.json中的`bid-js-entry`字段来打包js入口文件
+* "bid-js-entry" (object): 
 	*  前端JS入口映射map
 	
 		| -----| key[js build输出路径] | value[入口js源文件地址] |
@@ -41,7 +47,7 @@
 		| 示例| "src/p/index/index"|"./src/p/index/index.js"|
 
 	* 若为空则将自动匹配src/p下面所有的index.js作为入口js，并在build时输出到/build/[key]位置。
-* "alias":
+* "alias" (object):
 	*  别名,通过别名约定，可以使我们在业务代码中直接require([key])引用js模块。
 	
 		| | key[JS模块别名] | value[模块npm名称 或 模块在项目中的地址] |
@@ -76,5 +82,6 @@
 * 目前集成了zepto、underscore，可手动require进行加载：
 	* var $ = require('zepto');
 	* var _ = require('underscore');
+* 目前入口JS文件命名规则及路径必须约定为：`/src/p/**/index.js`。
 
 后续将支持React...敬请期待

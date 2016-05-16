@@ -14,10 +14,8 @@ var inlineCss = require('gulp-inline-css');
 var replace = require('gulp-replace');
 var fs = require('fs');
 var path = require('path');
-
 var Webpack = require('webpack');
 var gutil = require('gulp-util'); //工具
-
 var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
@@ -26,14 +24,14 @@ var infoBlue = colors.blue;
 
 var _ = require('underscore');
 var webpackConfig = require('br-bid/webpack.config');
-var userConfig = require('br-bid/lib/util/getLocalConfig'); 
+var userConfig = require('br-bid/lib/util/getLocalConfig');
 
 webpackConfig.entry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 
-if (_.isEmpty(webpackConfig.entry)) { 
-	// 如果config.json中没有设置相关bid-js-entry字段，则自动匹配JS入口文件，规则：匹配所有src/p/**/index.js
-	console.log(infoBlue('config.json没有配置entry字段，将自动匹配入口文件...'));
-	var autoEntry = require('br-bid/lib/util/getEntry'); 
+if (userConfig['auto-entry'] == true) {
+	// 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
+	console.log(infoBlue('将自动匹配合并入口文件...'));
+	var autoEntry = require('br-bid/lib/util/getEntry');
 	webpackConfig.entry = _.extend(webpackConfig.entry, autoEntry);
 }
 
@@ -51,11 +49,10 @@ gulp.task('clean', function(cb) {
 			cb();
 		}
 	})
-
 });
 
 gulp.task('lint', function() {
-	console.log('正在进行js规范检测...')
+	console.log(infoBlue('正在进行js规范检测...'));
 	return gulp.src('./src/**/**/*.js')
 		.pipe(jshint())
 		// .pipe(jshint.reporter('default'));

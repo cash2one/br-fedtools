@@ -34,6 +34,7 @@ module.exports = {
 	},
 	// webpack server 相关配置
 	module: {
+		noParse : [], // 独立项[path...](/xxx/xxx.min.js);
 		loaders: [
 			// { test: /\.js?$/, loaders: ['react-hot', 'babel'], exclude: /node_modules/},
 			{
