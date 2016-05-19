@@ -1,9 +1,0 @@
-{
-	"auto-entry": true,
-	"bid-js-entry": {
-		"src/cc/index/index": "./src/p/index/index.js"
-	},
-	"alias": {
-		"zepto": "webpack-zepto"
-	}
-}

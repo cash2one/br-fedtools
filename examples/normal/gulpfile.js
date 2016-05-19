@@ -26,13 +26,26 @@ var _ = require('underscore');
 var webpackConfig = require('br-bid/webpack.config');
 var userConfig = require('br-bid/lib/util/getLocalConfig');
 
-webpackConfig.entry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
+var jsEntry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 
 if (userConfig['auto-entry'] == true) {
 	// 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
 	console.log(infoBlue('将自动匹配合并入口文件...'));
 	var autoEntry = require('br-bid/lib/util/getEntry');
-	webpackConfig.entry = _.extend(webpackConfig.entry, autoEntry);
+	jsEntry = _.extend(webpackConfig.entry, autoEntry);
+}
+
+try {
+	var newJsEntry = JSON.stringify(jsEntry).replace(/\@version/g,userConfig.version);
+	jsEntry = JSON.parse(newJsEntry);
+} catch(e) {
+	console.log(warnYellow('config["bid-js-entry"]解析@version发生错误'));
+}
+
+webpackConfig.entry = jsEntry;
+
+if (userConfig['extract-common-to-path']) { // 提取全部页面的公共模块并打包到指定文件位置
+	webpackConfig.plugins.push(new Webpack.optimize.CommonsChunkPlugin(userConfig['extract-common-to-path']));
 }
 
 var isLintFailed = false; // lint是否失败
@@ -45,7 +58,7 @@ gulp.task('clean', function(cb) {
 			console.log('正在重建build目录...')
 			cb();
 		} else {
-			console.log('Nothing to delete!')
+			console.log('未找到build文件夹...')
 			cb();
 		}
 	})
@@ -61,19 +74,32 @@ gulp.task('lint', function() {
 				errors.forEach(function(error, index) {
 					var e = error.error;
 					var file = error.file;
-					console.log(errorRed(index, '. 所在位置：', file, ' -> line(', e.line, ')/character(', e.character, ')  ->', e.evidence.split(' ').join(''), '; 原因：', e.reason));
+					console.log(errorRed(index, '. 所在位置：', file, ' -> line(', e.line, ')/character(', e.character, ')  ->', e.evidence && e.evidence.split(' ').join(''), '; 原因：', e.reason));
 				});
 				isLintFailed = true;
 			}
 		}));
 });
 
-gulp.task('webpack', ['lint'], function(callback) {
+gulp.task('webpackWidthLint', ['lint'], function(callback) { // 先lint，在打包
 	if (!isLintFailed) {
 		console.log(successGreen('js规范检测通过!'))
 	} else {
 		console.log(warnYellow('请规范您的代码!'))
 	}
+	console.log(infoBlue('现在开始打包...'));
+	Webpack(webpackConfig, function(err, stats) {
+		if (err) throw new gutil.PluginError("webpack", err);
+		gutil.log("[webpack]", stats.toString({
+			chunks: false,
+			colors: true,
+			children: false
+		}));
+		callback();
+	});
+});
+
+gulp.task('webpack', function(callback) { // 只打包，不lint
 	console.log(infoBlue('现在开始打包...'));
 	Webpack(webpackConfig, function(err, stats) {
 		if (err) throw new gutil.PluginError("webpack", err);
@@ -102,10 +128,13 @@ gulp.task('inlinesource-htmlmin', ['clean'], function() {
 			removeStyleTags: false
 		}))*/
 		.pipe(replace(/<(html|body)>/g, ''))
+		.pipe(replace(/\@version/g, userConfig.version))
 		.pipe(htmlmin({
 			collapseWhitespace: true
 		}))
 		.pipe(gulp.dest('./build/src/p/'));
 });
 
-gulp.task('default', ['clean', 'lint', 'webpack', 'minify-js', 'inlinesource-htmlmin']);
+gulp.task('buildlint', ['clean', 'webpackWidthLint', 'minify-js', 'inlinesource-htmlmin']);
+
+gulp.task('default', ['clean', 'webpack', 'minify-js', 'inlinesource-htmlmin']);

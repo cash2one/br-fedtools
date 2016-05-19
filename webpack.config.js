@@ -14,8 +14,13 @@ var outputDir = 'build';
 
 var alias = { // 别名
 	zepto: 'webpack-zepto',
+	react: 'react',
+	'react-dom': 'react-dom',
+	'react-redux': 'react-redux',
+	'redux-thunk': 'redux-thunk',
+	redux: 'redux',
 	underscore: 'underscore',
-	'@br': path.join(envPath.cwdPath, "./src/c")
+	'@br': path.join(envPath.cwdPath, "./src/c/")
 };
 alias = _.extend(alias, userConfig.alias);
 
@@ -29,8 +34,13 @@ module.exports = {
 		root: path.join(__dirname, "./node_modules")
 	},
 	externals: { // 使用CDN/远程文件
-		// zepto: 'zepto',
-		// underscore: 'underscore'
+		/*zepto: 'zepto',
+		underscore: 'underscore',
+		react: 'react',
+		'react-dom': 'react-dom',
+		'react-redux': 'react-redux',
+		'redux-thunk': 'redux-thunk',
+		redux: 'redux'*/
 	},
 	// webpack server 相关配置
 	module: {
@@ -73,10 +83,12 @@ module.exports = {
 		/*new Webpack.ProvidePlugin({ // 注释此段代码，将不自动注入zepto，需要用户在js入口处手动写入 var $ = require('zepto');
 			$: "webpack-zepto"
 		}),
-
+		
 		new Webpack.ProvidePlugin({ // 注释此段代码，将不自动注入zepto，需要用户在js入口处手动写入 var _ = require('underscore');
 			_: "underscore"
 		}),*/
+
+		// new Webpack.optimize.CommonsChunkPlugin('./src/p/library.min.js'),
 
 		new Webpack.NoErrorsPlugin()
 	]

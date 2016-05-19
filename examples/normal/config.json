@@ -1,0 +1,11 @@
+{
+	"version": "0.0.1",
+	"auto-entry": true,
+	"bid-js-entry": {
+		"src/p/index/@version/index": "./src/p/index/@version/index.js"
+	},
+	"alias": {
+		"zepto": "webpack-zepto"
+	},
+	"extract-common-to-path": "./src/p/library.min.js"
+}

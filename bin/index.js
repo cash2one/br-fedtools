@@ -14,7 +14,7 @@ var fileGenerator = require('./../lib/fileGenerator');
 var npmInstall = require('./../lib/util/auto-npm-install');
 var path = require('path');
 require('shelljs/global');
-
+var gitTools = require('./../lib/util/gitTools');
 var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
@@ -29,9 +29,10 @@ program
 	.option('-ol, --online', '远端构建')
 	.option('-p, --port [type]', '监听端口', '3333')
 	.option('-q, --quiet', '安静模式')
-	.option('-r, --react', 'React项目')
 	.option('-g, --global', '全局模式')
 	.option('-f, --force [type]', '强制重新安装全部模块')
+	.option('-lint, --lint', '构建时检测js代码规范')
+	.option('-r, --react', '初始化react工程')
 	.action(function() {
 		console.log(" _____ _____ ____ _____           _     ");
 		console.log("|  ___| ____|  _ \\_   _|__   ___ | |___ ");
@@ -50,8 +51,14 @@ program
 		if (program.online) { // 远端构建
 			env = '远端';
 		} else { // 本地构建
+			var commands = 'gulp';
+			if (program.lint) {
+				commands += ' buildlint';
+			} else {
+				commands += ' default';
+			}
 			var initTime = new Date().getTime();
-			exec('gulp', {
+			exec(commands, {
 				async: true,
 				silent: program.quiet
 			}, function(code, output) {
@@ -81,6 +88,8 @@ program
 			port: program.port
 		});
 
+		gitTools.setConfigVersion(); // 检测git分支，设置config.version
+
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
@@ -97,18 +106,24 @@ program
 	.action(function(cmd, options) {
 		console.log(successGreen('正在初始化工程目录ing...'));
 		var dirname = path.join(process.cwd(), './');
-		fileGenerator(dirname, function() {
+		var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid ';
+		if (program.react) { // 初始化react工程
+			dependencies += ' react react-dom redux react-redux redux-thunk';
+		}
+		fileGenerator.commonGenerator({
+			'dirname': dirname,
+			'react': program.react
+		}, function() { // 初始化常规工程
 			console.log(infoBlue('正在安装构建依赖...'));
 			var initTime = new Date().getTime();
-			exec('npm install webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid', {
+			exec('npm install ' + dependencies, {
 				async: true,
 				silent: program.quiet
 			}, function(code, output) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime)/1000, 's'));
+				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
 			});
 		});
-
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
@@ -148,7 +163,7 @@ program
 				silent: program.quiet
 			}, function(code, output) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime)/1000, 's'));
+				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
 			});
 		}
 
