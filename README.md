@@ -43,6 +43,7 @@
 * 示例说明：
 	
 				{
+					"version": "0.0.1",
 					"auto-entry": true,
 					"bid-js-entry": {
 						"src/p/index/index": "./src/p/index/index.js",
