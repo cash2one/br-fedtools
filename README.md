@@ -47,13 +47,16 @@
 					"auto-entry": true,
 					"bid-js-entry": {
 						"src/p/index/index": "./src/p/index/index.js",
-						"src/p/bb/index": "./src/p/bb/index.js"
+						"src/p/bb/index": "./src/p/bb/index.js",
+						"src/p/react-index/@version/index": "./src/p/react-index/@version/index.js",
+						"src/p/index/@version/index": "./src/p/index/@version/index.js"
 					},
 					"alias": {
 						"zepto": "webpack-zepto",
 						"myslider": "@br/common/myslider",
 						"myslider": "../../c/common/myslider"
-					}
+					},
+					"extract-common-to-path": "./src/p/library.min.js"
 				}
 
 * "version" (string 版本号):

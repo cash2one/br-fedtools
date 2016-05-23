@@ -1,0 +1,10 @@
+{
+	"version": "0.0.1",
+	"auto-entry": true,
+	"bid-js-entry": {
+	},
+	"alias": {
+		"zepto": "webpack-zepto"
+	},
+	"extract-common-to-path": false
+}

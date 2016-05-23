@@ -31,16 +31,21 @@ var jsEntry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 if (userConfig['auto-entry'] == true) {
 	// 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
 	console.log(infoBlue('将自动匹配合并入口文件...'));
-	var autoEntry = require('br-bid/lib/util/getEntry');
+	var autoEntry = require('br-bid/lib/util/getEntry')(userConfig.version);
 	jsEntry = _.extend(webpackConfig.entry, autoEntry);
 }
 
-try {
-	var newJsEntry = JSON.stringify(jsEntry).replace(/\@version/g,userConfig.version);
-	jsEntry = JSON.parse(newJsEntry);
-} catch(e) {
-	console.log(warnYellow('config["bid-js-entry"]解析@version发生错误'));
+if (userConfig.version) {
+	try {
+		var newJsEntry = JSON.stringify(jsEntry).replace(/\@version/g,userConfig.version);
+		jsEntry = JSON.parse(newJsEntry);
+	} catch(e) {
+		console.log(warnYellow('config["bid-js-entry"]解析@version发生错误'));
+	}
+} else {
+	console.log(warnYellow('请注意，当前config.json中尚未设置资源的version字段'));
 }
+
 
 webpackConfig.entry = jsEntry;
 
@@ -120,6 +125,7 @@ gulp.task('minify-js', ['webpack'], function() {
 
 gulp.task('inlinesource-htmlmin', ['clean'], function() {
 	console.log('正在压缩迁移html...');
+	var v = userConfig.version ? userConfig.version + '/' : ''
 	return gulp.src('./src/p/**/*.html')
 		.pipe(inlinesource())
 		/*.pipe(inlineCss({
@@ -128,7 +134,7 @@ gulp.task('inlinesource-htmlmin', ['clean'], function() {
 			removeStyleTags: false
 		}))*/
 		.pipe(replace(/<(html|body)>/g, ''))
-		.pipe(replace(/\@version/g, userConfig.version))
+		.pipe(replace(/\@version\//g, v))
 		.pipe(htmlmin({
 			collapseWhitespace: true
 		}))
