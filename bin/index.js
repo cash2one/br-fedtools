@@ -19,6 +19,7 @@ var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
 var infoBlue = colors.blue;
+var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk'; // 本地工程依赖
 
 program
 	.allowUnknownOption() //不报错误
@@ -106,10 +107,10 @@ program
 	.action(function(cmd, options) {
 		console.log(successGreen('正在初始化工程目录ing...'));
 		var dirname = path.join(process.cwd(), './');
-		var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid ';
+		/*var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid ';
 		if (program.react) { // 初始化react工程
 			dependencies += ' react react-dom redux react-redux redux-thunk';
-		}
+		}*/
 		fileGenerator.commonGenerator({
 			'dirname': dirname,
 			'react': program.react
@@ -158,7 +159,7 @@ program
 		} else { // 本地node_module依赖
 			console.log(infoBlue('正在更新本地模块...'));
 			var initTime = new Date().getTime();
-			exec('npm update webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid', {
+			exec('npm install ' + dependencies, {
 				async: true,
 				silent: program.quiet
 			}, function(code, output) {
