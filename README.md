@@ -20,7 +20,9 @@
 		
 	* 安装方法请见：[NodeJS官网](http://nodejs.cn/)
 
-* step.2  全局安装 **npm install br-bid -g** 
+* step.2  全局安装
+	*  **sudo npm install br-bid -g**
+	*  **sudo npm install gulp** 
 * step.3  创建新建工程目录并进入 **mkdir project1 && cd project1** 
 * step.4  使用bid命令初始化工程 **bid init**
 
