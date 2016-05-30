@@ -19,7 +19,7 @@ var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
 var infoBlue = colors.blue;
-var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
+var dependencies = ' webpack gulp gulp-uglify del gulp-jshint jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
 
 program
 	.allowUnknownOption() //不报错误
