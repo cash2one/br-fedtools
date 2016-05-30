@@ -19,7 +19,7 @@ var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
 var infoBlue = colors.blue;
-var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk'; // 本地工程依赖
+var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
 
 program
 	.allowUnknownOption() //不报错误
@@ -86,7 +86,8 @@ program
 	.action(function(cmd, options) {
 		console.log(successGreen('开启开发者模式'));
 		webServer.start({
-			port: program.port
+			port: program.port,
+			queit: program.quiet
 		});
 
 		gitTools.setConfigVersion(); // 检测git分支，设置config.version
