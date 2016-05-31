@@ -22,8 +22,10 @@ var alias = { // 别名
 	underscore: 'underscore',
 	'@br': path.join(envPath.cwdPath, "./src/c/")
 };
+for (aliasName in userConfig.alias) {
+	userConfig.alias[aliasName] = userConfig.alias[aliasName].replace(/^\@br\//,alias['@br']);
+}
 alias = _.extend(alias, userConfig.alias);
-
 module.exports = {
 	entry: {},
 	output: {
