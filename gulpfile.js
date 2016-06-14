@@ -57,6 +57,15 @@ var setLocalConfig = function() { // 设置本地构建 webpack.config 配置：
 	webpackConfig.entry = jsEntry;
 }
 
+var clearBuildConfig = function() {
+	var filename = path.join(process.cwd(), 'build.json');
+	fs.writeFile(filename, '', function(err) {
+		if (err) {
+			console.log(errorRed('清空build.json失败，请手动删除'));
+		}
+	});
+}
+
 if (userConfig['extract-common-to-path']) { // 提取全部页面的公共模块并打包到指定文件位置
 	webpackConfig.plugins.push(new Webpack.optimize.CommonsChunkPlugin(userConfig['extract-common-to-path']));
 }
@@ -144,6 +153,9 @@ gulp.task('copy-source-lint', ['minify-js-lint', 'inlinesource-htmlmin'], functi
 
 	gulp.src('./src/images/**/*')
 		.pipe(gulp.dest('./build/src/images'));
+	
+	clearBuildConfig();
+
 	return callback();
 });
 
@@ -186,6 +198,8 @@ gulp.task('copy-source', ['minify-js', 'inlinesource-htmlmin'], function(callbac
 	gulp.src('./src/images/**/*')
 		.pipe(gulp.dest('./build/src/images'));
 
+	// clearBuildConfig();
+
 	callback();
 });
 
@@ -217,7 +231,11 @@ gulp.task('publishinit', function(callback) {
 gulp.task('lint', function() { // 代码健康检测
 	console.log(infoBlue('正在进行js规范检测...'));
 	if (!buildInfos.config) {
-		buildInfos.config = require(path.join(process.cwd(), 'build.json'));
+		try {
+			buildInfos.config = require(path.join(process.cwd(), 'build.json'));
+		} catch (e) {
+			console.log(warnYellow('加载build.json异常'));
+		}
 	}
 	var lintConfig = {
 		entry: ['!./src/**/**/*.min.js', '!./src/**/**/*.lintignore.js', '!./src/c/common/rem.js'],
@@ -254,7 +272,7 @@ gulp.task('lint', function() { // 代码健康检测
 		}
 	}
 	var isEmptyJsEntry = true;
-	if (buildInfos && buildInfos.config && buildInfos.config.jsEntry) {
+	if (buildInfos && buildInfos.config && buildInfos.config.jsEntry && !buildInfos.config.lintPath) {
 		for (var jName in buildInfos.config.jsEntry) {
 			lintConfig.entry.push(buildInfos.config.jsEntry[jName]);
 			isEmptyJsEntry = false;
@@ -263,13 +281,14 @@ gulp.task('lint', function() { // 代码健康检测
 			lintConfig.entry = [];
 		}
 	} else {
-		lintConfig.entry.push('./src/**/**/*.js');
+		if (buildInfos.config && buildInfos.config.lintPath && !buildInfos.config.jsEntry) {
+			lintConfig.entry = buildInfos.config.lintPath;
+		} else {
+			lintConfig.entry.push('./src/**/**/*.js');
+		}
 	}
 
-	if (buildInfos.config && buildInfos.config.lintPath) {
-		lintConfig.entry = buildInfos.config.lintPath;
-	}
-	// return gulp.src(['./src/**/**/*.js', '!./src/**/**/*.min.js', '!./src/**/**/*.lintignore.js'])
+		// return gulp.src(['./src/**/**/*.js', '!./src/**/**/*.min.js', '!./src/**/**/*.lintignore.js'])
 	return gulp.src(lintConfig.entry)
 		.pipe(jshint(lintConfig.option))
 		// .pipe(jshint.reporter('default'));
@@ -302,7 +321,7 @@ gulp.task('publishdaily', ['publishinit', 'clean', 'lint', 'webpack-lint', 'mini
 		}, function(code, output) {
 			var nowTime = new Date().getTime();
 			console.log(successGreen('已成功上传到日常服务器!'));
-			console.log(infoBlue('上传耗时:' + (nowTime - initTime)/1000, 's'));
+			console.log(infoBlue('上传耗时:' + (nowTime - initTime) / 1000, 's'));
 		});
 	} else {
 		console.log(errorRed('上传失败，无法解析您输入的userName'));
@@ -320,4 +339,7 @@ gulp.task('dolint', ['lint'], function() {
 	} else {
 		console.log(warnYellow('请规范您的代码!'))
 	}
+	
+	clearBuildConfig();
 }); // 本地lint 代码检测
+
