@@ -30,7 +30,7 @@ var userConfig = require('br-bid/lib/util/getLocalConfig');
 
 var jsEntry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 var buildInfos = require('br-bid/lib/util/getEntry')(userConfig.version);
-buildInfos.config = require(path.join(process.cwd(), 'build.json'));
+
 var autoEntry = false;
 
 require('shelljs/global');
@@ -197,6 +197,9 @@ gulp.task('copy-source', ['minify-js', 'inlinesource-htmlmin'], function(callbac
 
 gulp.task('publishinit', function(callback) {
 	console.log(infoBlue('初始化发布...'));
+	if (!buildInfos.config) {
+		buildInfos.config = require(path.join(process.cwd(), 'build.json'));
+	}
 	// buildInfos.config = require(path.join(process.cwd(), 'build.json'));
 	if (userConfig.version) {
 		try {
@@ -213,6 +216,9 @@ gulp.task('publishinit', function(callback) {
 
 gulp.task('lint', function() { // 代码健康检测
 	console.log(infoBlue('正在进行js规范检测...'));
+	if (!buildInfos.config) {
+		buildInfos.config = require(path.join(process.cwd(), 'build.json'));
+	}
 	var lintConfig = {
 		entry: ['!./src/**/**/*.min.js', '!./src/**/**/*.lintignore.js', '!./src/c/common/rem.js'],
 		option: {
@@ -290,13 +296,13 @@ gulp.task('lint', function() { // 代码健康检测
 gulp.task('publishdaily', ['publishinit', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'inlinesource-htmlmin', 'copy-source-lint'], function(callback) { // 日常发布打包
 	if (buildInfos.config.userName) {
 		var initTime = new Date().getTime();
-		exec('scp -r ./build root@101.200.132.102:/home', {
-			// exec('scp -r ./build/ ' + buildInfos.config.userName + '@192.168.180.10:/opt/www/minions', {
+		// exec('scp -r ./build root@101.200.132.102:/home', {
+		exec('scp -r ./build/ ' + buildInfos.config.userName + '@192.168.180.10:/opt/www/minions', {
 			async: true
 		}, function(code, output) {
 			var nowTime = new Date().getTime();
 			console.log(successGreen('已成功上传到日常服务器!'));
-			console.log(infoBlue('上传耗时:' + (nowTime - initTime), 's'));
+			console.log(infoBlue('上传耗时:' + (nowTime - initTime)/1000, 's'));
 		});
 	} else {
 		console.log(errorRed('上传失败，无法解析您输入的userName'));
@@ -308,7 +314,7 @@ gulp.task('buildlint', ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint
 
 gulp.task('default', ['init', 'clean', 'webpack', 'minify-js', 'inlinesource-htmlmin', 'copy-source']); // 本地构建 不进行 lint 代码检测
 
-gulp.task('dolint', ['lint'], function(){
+gulp.task('dolint', ['lint'], function() {
 	if (!isLintFailed) {
 		console.log(successGreen('js规范检测通过!'))
 	} else {

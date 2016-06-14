@@ -67,7 +67,7 @@ program
 					silent: program.quiet
 				}, function(code, output) {
 					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+					console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
 					console.log(successGreen('本地构建完毕!'));
 				});
 				return;
@@ -141,7 +141,7 @@ program
 								silent: program.quiet
 							}, function(code, output) {
 								var nowTime = new Date().getTime();
-								console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+								console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
 								console.log(successGreen('本地构建完毕!'));
 							});
 						} else {
@@ -162,7 +162,7 @@ program
 					silent: program.quiet
 				}, function(code, output) {
 					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+					console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
 					console.log(successGreen('本地构建完毕!'));
 				});
 			}
