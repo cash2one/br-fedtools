@@ -23,9 +23,17 @@ var alias = { // 别名
 	'@br': path.join(envPath.cwdPath, "./src/c/")
 };
 for (aliasName in userConfig.alias) {
-	userConfig.alias[aliasName] = userConfig.alias[aliasName].replace(/^\@br\//,alias['@br']);
+	userConfig.alias[aliasName] = userConfig.alias[aliasName].replace(/^\@br\//, alias['@br']); // 替换@br别名
 }
 alias = _.extend(alias, userConfig.alias);
+
+var noParse = []; // 忽略查找依赖
+userConfig.noParse = userConfig.noParse || [];
+noParse = noParse.concat(userConfig.noParse);
+noParse.forEach(function(np, ind) {
+	noParse[ind] = np.replace(/^\@br\//, alias['@br']); // 替换@br别名
+});
+
 module.exports = {
 	entry: {},
 	output: {
@@ -46,7 +54,7 @@ module.exports = {
 	},
 	// webpack server 相关配置
 	module: {
-		noParse : [], // 独立项[path...](/xxx/xxx.min.js);
+		noParse: noParse, // 独立项[path...] (文件路径) 如果你确定一个模块中没有其它新的依赖就可以配置这项，webpack 将不再扫描这个文件中的依赖
 		loaders: [
 			// { test: /\.js?$/, loaders: ['react-hot', 'babel'], exclude: /node_modules/},
 			{

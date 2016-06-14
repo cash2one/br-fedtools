@@ -52,11 +52,12 @@
 
 * 状态吗一览表
 
-    | 状态码 | 说明 |
-    | -----|:----:|
-    | 200|调用成功|
-    | 403|Session失效|
-    | xxx|xxx|
+| 状态码 | 说明 | 用户提示 |
+| -----|-----|:----:|
+| 200|调用成功| |
+| 403|Session失效| 抱歉，登录过期咯 |
+| ... | ... | ... |
+| 请客户端同学约定后补全状态码 | 及说明； | 请产品同学根据状态码提供友善文案 |
 
 ## BrBridge API 约定
 
@@ -204,7 +205,7 @@
                 }
 
 
-## COMMON->通用事件API
+### COMMON->通用事件API
 
 * 前端请求示例：
     * br_minions://Common:1578041/openWindow?{"url":"http://zxy.io/AXFJZ"}
@@ -216,7 +217,8 @@
        * @params 
        
                 {
-                    url <string>（*required） : '新窗口的url地址' // 新窗口的url地址
+                    url <string>（*required） : '新窗口的url地址', // 新窗口的url地址
+                    reload <boolean>（*optional） : '默认为false:在新窗口打开页面，true:本地刷新重载页面（并重置当前webview一切自定义native组件）' // 是否本地刷新
                 }
 
         * success(data): 成功回调函数
@@ -226,7 +228,8 @@
     * 前端调用demo
 
                 BrBridge.call('Common', 'openWindow', {
-                    url: 'http://xxxxx.com/list.html'
+                    url: 'http://xxxxx.com/list.html',
+                    reload: false
                 }, function(data) {
                     console.log('success');
                     console.log(data);
@@ -349,9 +352,9 @@
                 }
     * 备注
 
-* dailog
+* dialog
     * 说明:弹出提示对话框
-    * 前端调用函数：BrBridge.call('Common', 'dailog', @params, success, failure, failureTimeout, onlyIframe);
+    * 前端调用函数：BrBridge.call('Common', 'dialog', @params, success, failure, failureTimeout, onlyIframe);
     * 前端提供参数
         * @params 
         
@@ -372,7 +375,7 @@
         * onlyIframe: <boolean>安卓下也使用iframe。默认为false : 仅在IOS下使用iframe，而安卓默认使用prompt（*optional）
     * 前端调用demo
 
-                BrBridge.call('Common', 'dailog', {
+                BrBridge.call('Common', 'dialog', {
                     title: '一大波红包向您袭来',
                     content: '你有一个红包可以领取，过期不候哦！',
                     leftBtn: {
@@ -436,7 +439,7 @@
                 
     * 备注
 
-* // carema 
+* // camera 
     * 说明:使用相机
     * 备注:本期暂不提供
 
@@ -448,7 +451,7 @@
     * 说明:分享
     * 备注:本期暂不提供
 
-## Bind Native绑定调用 API：
+### Bind Native绑定调用 API：
 
 * 前端请求示例：
     * "br_minions://Bind:1228875/historyBack?{}"
@@ -474,15 +477,7 @@
             * onlyIframe: <boolean>安卓下也使用iframe。默认为false : 仅在IOS下使用iframe，而安卓默认使用prompt（*optional）
         * 前端调用demo
 
-                BrBridge.call('Bind', 'historyBack', {
-                    url: 'http://zxxcz.io/sdxz'
-                }, function(data) {
-                    console.log('success');
-                    console.log(data);
-                }, function(error) {
-                    console.log('failure');
-                    console.log(error);
-                });
+                BrBridge.call('Bind', 'historyBack', {}, function(data) { window.localcation.href = 'http://m.baidu.com'; }, function(error) { console.log(error); });
 
         * 客户端回调函数 BrBridge.onNativeCall(id,object)
             * 参见 客户端 调用 前端回调函数 约定
@@ -504,13 +499,7 @@
             * onlyIframe: <boolean>安卓下也使用iframe。默认为false : 仅在IOS下使用iframe，而安卓默认使用prompt（*optional）
         * 前端调用demo
 
-                BrBridge.call('Bind', 'nativeBack', {}, function(data) {
-                    console.log('success');
-                    console.log(data);
-                }, function(error) {
-                    console.log('failure');
-                    console.log(error);
-                });
+                BrBridge.call('Bind', 'nativeBack', {}, function(data) { window.localcation.href = 'http://m.baidu.com'; }, function(error) { console.log(error); });
 
         * 客户端回调函数 BrBridge.onNativeCall(id,object)
             * 参见 客户端 调用 前端回调函数 约定
@@ -532,7 +521,6 @@
                         @menu<object> : {
                             icon : '&xxxx', // icon图标
                             title : '标题', // 标题
-                            eventId : '123023', // 事件ID
                             callback : function() {
 
                             }
@@ -570,6 +558,19 @@
                     console.log('failure');
                     console.log(error);
                 });
+        
+        * 客户端接收参数 
+                * @params 
+                
+                    {
+                        menus <array>（*required） : [menu<object>...] // 菜单项
+                            @menu<object> : {
+                                icon : '&xxxx', // icon图标
+                                title : '标题', // 标题
+                                eventId : '123023' // 事件ID
+                            }
+                        stopMerge : true // 不合并右侧顶部菜单（默认false，自动合并;ture 完全覆盖）
+                    }
 
         * 客户端回调函数 BrBridge.onSuccess/onFailure
             * 参见 客户端 调用 前端回调函数 约定
@@ -580,8 +581,30 @@
                     
         * 备注:
             * menus中的每个事件通过BrBridge.onNativeCall进行调用。
-        
+       
+## 前端常用信息
 
+* BrBridge.env 环境信息可以直接通过window.BrBridge.env拿到下列信息
+    
+    *   示例：
 
-
+            {
+                "isAndroid": false,
+                "isIOS": false,
+                "osVersion": null,
+                "isApp": false,
+                "appInfo": {
+                    "appVersion": null,
+                    "appName": null
+                }
+            }
+    
+    *   说明：
+        *   isAndroid:<boolean> 是否是安卓环境
+        *   isIOS:<boolean> 是否是IOS环境
+        *   osVersion:<string> os系统信息
+        *   isApp:<boolean> 是否是brapp
+        *   appInfo:<object>
+            *   appVersion:<string> app版本号
+            *   appName:<string> app名称
 

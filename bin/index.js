@@ -18,21 +18,25 @@ var gitTools = require('./../lib/util/gitTools');
 var colors = require('cli-color');
 var errorRed = colors.red;
 var successGreen = colors.green;
+var warnYellow = colors.yellow;
 var infoBlue = colors.blue;
-var dependencies = ' webpack gulp gulp-uglify del gulp-jshint jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
+var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
+
+var inquirer = require('inquirer');
+var fs = require('fs');
+var envPath = require('../lib/util/env');
+
+var userConfig = require('../lib/util/getLocalConfig');
+var buildInfos = require('../lib/util/getEntry')(userConfig.version);
+
+var Promise = require('promise');
+var write = Promise.denodeify(fs.writeFile)
 
 program
 	.allowUnknownOption() //不报错误
 	.version(appInfo.version)
 	.usage('FEDTools前端开发工具')
-	.option('-c, --config [type]', '配置文件地址')
-	.option('-l, --local', '本地构建')
-	.option('-ol, --online', '远端构建')
-	.option('-p, --port [type]', '监听端口', '3333')
 	.option('-q, --quiet', '安静模式')
-	.option('-g, --global', '全局模式')
-	.option('-f, --force [type]', '强制重新安装全部模块')
-	.option('-lint, --lint', '构建时检测js代码规范')
 	.option('-r, --react', '初始化react工程')
 	.action(function() {
 		console.log(" _____ _____ ____ _____           _     ");
@@ -44,37 +48,134 @@ program
 	.parse(process.argv);
 
 program
+	.command('lint')
+	.alias('l')
+	.description('代码检测')
+	.option('-i, --input [type]', '路径')
+	.action(function(cmd, options) {
+		console.log(successGreen('开始代码检测'));
+	
+		var entrySet = {
+			lintPath: program.args[0].input || false
+		};
+		var filename = path.join(envPath.cwdPath, 'build.json');
+		var promise = write(filename, JSON.stringify(entrySet), 'utf8')
+			.then(function() {
+				var initTime = new Date().getTime();
+				exec('gulp dolint', {
+					async: true,
+					silent: program.quiet
+				}, function(code, output) {
+					var nowTime = new Date().getTime();
+					console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+					console.log(successGreen('本地构建完毕!'));
+				});
+				return;
+			});
+
+	}).on('--help', function() {
+		console.log('  举个栗子:');
+		console.log('');
+		console.log('    bid lint   :   检查全部js文件');
+		console.log('    bid lint -i|--input [src]  :   检查指定路径（src）的文件');
+		console.log('');
+		process.exit(1);
+	});
+
+program
 	.command('build')
 	.alias('b')
 	.description('进行构建')
+	.option('-o, --online', '远端构建')
+	.option('-d, --publishdaily', '构建并发布发布日常')
+	.option('-l, --lint', '构建时检测js代码规范')
 	.action(function(cmd, options) {
 		var env = '本地';
-		if (program.online) { // 远端构建
+		if (false && program.args[0].online) { // 远端构建
 			env = '远端';
 		} else { // 本地构建
 			var commands = 'gulp';
-			if (program.lint) {
-				commands += ' buildlint';
+			if (program.args[0].publishdaily) {
+				commands += ' publishdaily';
+				inquirer.prompt([{
+					type: 'input',
+					name: 'userName',
+					message: '请输入用户名'
+				}, {
+					type: 'checkbox',
+					name: 'selectedEntry',
+					message: '请选择需要进行构建的页面:',
+					choices: buildInfos.autoGetHtml.keys
+				}]).then(function(answers) {
+					var entrySet = {
+						userName: answers.userName,
+						jsEntry: {},
+						htmlEntry: []
+					};
+					answers.selectedEntry.forEach(function(se, index) {
+						for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
+							if (htmlKey.split(se).length > 1) {
+								var tmpSrc = './' + htmlKey + '.html';
+								if (userConfig.version) {
+									tmpSrc = tmpSrc.replace(userConfig.version + '/', '');
+								}
+								if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
+									entrySet.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
+								}
+
+								entrySet.htmlEntry.push(tmpSrc);
+								return true;
+							}
+						}
+					})
+
+					var filename = path.join(envPath.cwdPath, 'build.json');
+					var data = JSON.stringify(entrySet);
+					fs.writeFile(filename, data, function(err) {
+						if (!err) {
+							console.log(successGreen('build.json创建成功'));
+							commands += ' --entry ' + filename;
+							var initTime = new Date().getTime();
+							exec(commands, {
+								async: true,
+								silent: program.quiet
+							}, function(code, output) {
+								var nowTime = new Date().getTime();
+								console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+								console.log(successGreen('本地构建完毕!'));
+							});
+						} else {
+							console.log(errorRed('config.json写入失败，请检查该文件'));
+						}
+					});
+
+				});
 			} else {
-				commands += ' default';
+				if (program.args[0].lint) {
+					commands += ' buildlint';
+				} else {
+					commands += ' default';
+				}
+				var initTime = new Date().getTime();
+				exec(commands, {
+					async: true,
+					silent: program.quiet
+				}, function(code, output) {
+					var nowTime = new Date().getTime();
+					console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
+					console.log(successGreen('本地构建完毕!'));
+				});
 			}
-			var initTime = new Date().getTime();
-			exec(commands, {
-				async: true,
-				silent: program.quiet
-			}, function(code, output) {
-				var nowTime = new Date().getTime();
-				console.log(infoBlue('耗时:' + (nowTime - initTime), 's'));
-				console.log(successGreen('本地构建完毕!'));
-			});
 		}
 		console.log(successGreen('开启' + env + '构建'));
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
-		console.log('    bid build (-l|--local)   :   进行本地构建（默认使用）');
-		console.log('    bid build -ol|--online   :   进行远端构建（暂不可用）');
+		// console.log('    bid build (-l|--local)   :   进行本地构建（默认使用）');
+		console.log('    bid build -o|--online   :   进行远端构建（暂不可用）');
+		console.log('    bid build -l|--lint   :   本地构建并做代码检查');
+		console.log('    bid build -d|--publishdaily   :   本地构建并发布到日常服务器');
 		console.log('');
 		process.exit(1);
 	});
@@ -83,10 +184,12 @@ program
 	.command('dev')
 	.alias('d')
 	.description('进行开发')
+	.option('-p, --port [type]', '监听端口', '3333')
 	.action(function(cmd, options) {
 		console.log(successGreen('开启开发者模式'));
 		webServer.start({
-			port: program.port,
+			// port: program.port,
+			port: program.args[0].port,
 			queit: program.quiet
 		});
 
@@ -138,8 +241,10 @@ program
 	.command('update')
 	.alias('u')
 	.description('更新全局依赖模块')
+	.option('-f, --force [type]', '强制重新安装全部模块')
+	.option('-g, --global', '全局模式')
 	.action(function(cmd, options) {
-		if (program.global) { // 更新全局依赖
+		if (program.args[0].global) { // 更新全局依赖
 			console.log(successGreen('正在更新全局依赖模块,请稍后'));
 			var settings = {
 				quiet: false
@@ -147,8 +252,8 @@ program
 			if (program.quiet) { // 安静模式
 				settings.quiet = true;
 			}
-			if (program.force) { // 强制更新，则重新安装全部全局依赖npm模块
-				settings.moduleName = program.force;
+			if (program.args[0].force) { // 强制更新，则重新安装全部全局依赖npm模块
+				settings.moduleName = program.args[0].force;
 				npmInstall.install(settings, function() {
 					console.log(successGreen('强制更新完成'));
 				});
