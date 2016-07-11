@@ -27,9 +27,11 @@ for (aliasName in userConfig.alias) {
 }
 alias = _.extend(alias, userConfig.alias);
 
-var noParse = []; // 忽略查找依赖
-userConfig.noParse = userConfig.noParse || [];
-noParse = noParse.concat(userConfig.noParse);
+var noParse = []; // 忽略查找出现在其中的js所引入的依赖
+
+if (userConfig.noParse) {
+	noParse = noParse.concat(userConfig.noParse);
+}
 noParse.forEach(function(np, ind) {
 	noParse[ind] = np.replace(/^\@br\//, alias['@br']); // 替换@br别名
 });

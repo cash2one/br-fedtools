@@ -109,13 +109,21 @@
 				// 等同于 var myslider = require("../../c/common/myslider");
 				var $ = require("zepto");
 				
-* "extract-common-to-path"(string，相对通用js打包输出路径)
+* "extract-common-to-path"(String，相对通用js打包输出路径)
   * 字段说明：是否需要提取全部的公共js模块
   
 	| 示例 | 说明 |
 	| -----|:----:|
 	| "extract-common-to-path":false|不对通用的js模块进行提取及单独打包|
 	| "extract-common-to-path":"./src/p/library.min.js"|将通用的js模块提取并打包至/build/src/p/library.min.js文件|
+
+* "noParse"(String或Array，不检查配置路径所指向js的依赖)
+  * 字段说明：如果你确定一个模块中没有其它新的依赖就可以配置这项，webpack 将不再扫描这个文件中的依赖
+  
+	| 示例 | 说明 |
+	| -----|:----:|
+	| "noParse":"./src/p/library.min.js"|不检查配置路径所指向js的依赖|
+	| "extract-common-to-path":["./src/p/library.min.js","./src/p/lib.min.js"]|忽略检查"./src/p/library.min.js"和"./src/p/lib.min.js"的依赖|
 
 ## bid命令详解
 

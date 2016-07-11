@@ -1,4 +1,7 @@
 {
+	"appName": "",
+	"dailyServer": "192.168.180.10",
+	"dailyServerPath": "/opt/www/build/",
 	"version": "0.0.1",
 	"auto-entry": true,
 	"bid-js-entry": {
