@@ -45,6 +45,9 @@
 * 示例说明：
 	
 				{
+					"appName": "",
+					"dailyServer": "192.168.180.10",
+					"dailyServerPath": "/opt/www/build/",
 					"version": "0.0.1",
 					"auto-entry": true,
 					"bid-js-entry": {
@@ -58,7 +61,8 @@
 						"myslider": "@br/common/myslider",
 						"myslider": "../../c/common/myslider"
 					},
-					"extract-common-to-path": "./src/p/library.min.js"
+					"extract-common-to-path": "./src/p/library.min.js",
+					"noParse": ['./src/p/index/index.js']
 				}
 
 * "version" (string 版本号):
@@ -124,6 +128,24 @@
 	| -----|:----:|
 	| "noParse":"./src/p/library.min.js"|不检查配置路径所指向js的依赖|
 	| "extract-common-to-path":["./src/p/library.min.js","./src/p/lib.min.js"]|忽略检查"./src/p/library.min.js"和"./src/p/lib.min.js"的依赖|
+
+* "appName" (string 工程名称):
+	* 说明:
+		* 项目名称将决定日常、预发及线上部署时的部署路径；
+			* 日常地址：http://dym.100credit.com/工程名称/src/p/demo/index.html
+			* 预发地址：http://pre.100credit.com/工程名称/src/p/demo/index.html
+			* 线上地址：http://m.100credit.com/工程名称/src/p/demo/index.html
+		* 进行日常发布时，请配置正确appName
+
+* "dailyServer" (string 日常服务器Host（域名或IP地址）):
+	* 说明:
+		* 进行日常发布时，请配置正确dailyServer
+		* 错误的dailyServer将导致日常发布失败
+
+* "dailyServerPath" (string 日常服务器发布路径):
+	* 说明:
+		* 默认为'/opt/www/build/',一般情况下无需修改此配置
+		* 进行日常发布时，请配置正确dailyServerPath
 
 ## bid命令详解
 
