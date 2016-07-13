@@ -20,7 +20,7 @@ var errorRed = colors.red;
 var successGreen = colors.green;
 var warnYellow = colors.yellow;
 var infoBlue = colors.blue;
-var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
+var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace jshint underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
 
 var inquirer = require('inquirer');
 var fs = require('fs');
