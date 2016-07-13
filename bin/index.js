@@ -54,7 +54,7 @@ program
 	.option('-i, --input [type]', '路径')
 	.action(function(cmd, options) {
 		console.log(successGreen('开始代码检测'));
-	
+
 		var entrySet = {
 			lintPath: program.args[0].input || false
 		};
@@ -67,7 +67,7 @@ program
 					silent: program.quiet
 				}, function(code, output) {
 					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
+					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
 					console.log(successGreen('本地构建完毕!'));
 				});
 				return;
@@ -140,12 +140,38 @@ program
 								async: true,
 								silent: program.quiet
 							}, function(code, output) {
+
+								if (entrySet.userName) { // 校验用户名
+									if (!userConfig.dailyServer) {
+										console.log(errorRed('上传失败，请正确设置config.json中的dailyServer字段'));
+									} else if (!userConfig.dailyServerPath) {
+										console.log(errorRed('上传失败，请正确设置config.json中的dailyServerPath字段'));
+									} else if (!userConfig.appName) {
+										console.log(errorRed('上传失败，请正确设置config.json中的appName字段'));
+									} else { // 进行日常发布
+										var initTime = new Date().getTime();
+										// exec('scp -r ./build root@101.200.132.102:/home', {
+										// exec('scp -r ./build/ ' + entrySet.userName + '@192.168.180.10:/opt/www/minions', {
+										// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
+										// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
+										exec('scp -r ./build/* ' + entrySet.userName + '@' + userConfig.dailyServer + ':' + userConfig.dailyServerPath + userConfig.appName, {
+											async: true
+										}, function(code, output) {
+											var nowTime = new Date().getTime();
+											console.log(successGreen('已成功上传到日常服务器!'));
+											console.log(infoBlue('上传耗时:' + (nowTime - initTime) / 1000, 's'));
+										});
+									}
+								} else {
+									console.log(errorRed('上传失败，无法解析您输入的userName'));
+								}
+
 								var nowTime = new Date().getTime();
-								console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
+								console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
 								console.log(successGreen('本地构建完毕!'));
 							});
 						} else {
-							console.log(errorRed('config.json写入失败，请检查该文件'));
+							console.log(errorRed('build.json写入失败，请检查该文件'));
 						}
 					});
 
@@ -162,7 +188,7 @@ program
 					silent: program.quiet
 				}, function(code, output) {
 					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime)/1000, 's'));
+					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
 					console.log(successGreen('本地构建完毕!'));
 				});
 			}

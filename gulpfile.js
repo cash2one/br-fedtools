@@ -313,28 +313,6 @@ gulp.task('lint', function() { // 代码健康检测
  */
 
 gulp.task('publishdaily', ['publishinit', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'inlinesource-htmlmin', 'copy-source-lint'], function(callback) { // 日常发布打包
-	if (buildInfos.config.userName) {
-		if (!userConfig.dailyServer) {
-			console.log(errorRed('上传失败，请正确设置config.json中的dailyServer字段'));
-		} else if (!userConfig.dailyServerPath) {
-			console.log(errorRed('上传失败，请正确设置config.json中的dailyServerPath字段'));
-		} else if (!userConfig.appName) {
-			console.log(errorRed('上传失败，请正确设置config.json中的appName字段'));
-		} else {
-			var initTime = new Date().getTime();
-			// exec('scp -r ./build root@101.200.132.102:/home', {
-			// exec('scp -r ./build/ ' + buildInfos.config.userName + '@192.168.180.10:/opt/www/minions', {
-			exec('scp -r ./build/ ' + buildInfos.config.userName + '@' + userConfig.dailyServer + ':' + userConfig.dailyServerPath + userConfig.appName, {
-				async: true
-			}, function(code, output) {
-				var nowTime = new Date().getTime();
-				console.log(successGreen('已成功上传到日常服务器!'));
-				console.log(infoBlue('上传耗时:' + (nowTime - initTime) / 1000, 's'));
-			});
-		}
-	} else {
-		console.log(errorRed('上传失败，无法解析您输入的userName'));
-	}
 	callback();
 });
 
