@@ -165,8 +165,9 @@
 ||..|-d\|--daily|(可选)进行编译打包并上传至日常服务器|
 ||..|-q\|--quiet(可选)|开启安静模式|
 ||..|-l\|--lint(可选)|开启js编写规范检测（-d发布日常时自动开启）|
-|代码检测|bid lint|无|进行本地js代码检测(全部js)|
-||..|-i\|--input src (可选)|对指定js文件进行本地代码检测(指定的src)|
+|代码检测|bid lint|-i\|--input <filePath>|对指定文件中的iconfont ttf进行base64转换|
+||..|-o\|--output <filePath> (可选)|将转换后的内容输出值output文件（若没有指定output则替换原有input文件）|
+||..|相关示例|bid iconfont -i src/c/less/iconfont.less -o src/c/less/iconfont.less|
 
 * 进行日常构建发布时，会自动在项目根目录生成build.json文件
 
