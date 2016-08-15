@@ -30,7 +30,10 @@ var userConfig = require('../lib/util/getLocalConfig');
 var buildInfos = require('../lib/util/getEntry')(userConfig.version);
 
 var Promise = require('promise');
-var write = Promise.denodeify(fs.writeFile)
+var write = Promise.denodeify(fs.writeFile);
+
+var co = require('co');
+var urllib = require('urllib');
 
 program
 	.allowUnknownOption() //不报错误
@@ -307,6 +310,68 @@ program
 		console.log('    bid update  (-q|--quiet) ,   更新bid全局依赖模块(开启安静模式，默认"非安静模式")');
 		console.log('    bid update -f [模块名],   强制重新安装bid指定依赖模块');
 		console.log('');
+		process.exit(1);
+	});
+
+program
+	.command('iconfont')
+	.description('iconfont ttf 2 base64')
+	.option('-i, --input <file>', 'less或者css文件')
+	.option('-o, --output <file>', '输出到此路径')
+	.action(function(cmd, options) {
+		console.log(infoBlue('现在开始 iconfont ttf 转换 base64 ...'));
+		var parseUrl = function(text) {
+			var urlRegex = /(https?:?)?(\/\/at.alicdn.com\/t\/font_.*\.ttf)/;
+			if (urlRegex.exec(text)) {
+				return 'http:' + RegExp.$2;
+			}
+			return false;
+		};
+
+		var parseLine = function(line) {
+			return new Promise(function(resolve, reject) {
+				var template = "    src: url(data:font/truetype;charset=utf-8;base64,<>) format('truetype');";
+				var url = parseUrl(line);
+				if (url) {
+					urllib.request(url, function(err, data, res) {
+						if (err) reject(err);
+						var line = template.replace('<>', data.toString('base64'));
+						resolve(line);
+					})
+				} else {
+					resolve(line);
+				}
+
+			});
+		};
+
+		co(function*() {
+			var input, output;
+			if (program.args[0].input) {
+				input = program.args[0].input;
+			} else {
+				process.exit(1);
+			}
+			var fileContent = fs.readFileSync(input).toString().split('\n');
+			var arr = [];
+
+			fileContent.forEach(function(line) {
+				arr.push(parseLine(line));
+			});
+			var data = yield arr;
+
+			// 有输出路径则写到对应文件，否则直接替换原文件
+			if (program.args[0].output) {
+				output = program.args[0].output;
+				fs.writeFileSync(output, data.join('\n'));
+				console.log(successGreen('替换完成！'));
+			} else {
+				fs.writeFileSync(input, data.join('\n'));
+				console.log(warnYellow('没有指定输出路径，源文件替换完成！'));
+			}
+		});
+
+	}).on('--help', function() {
 		process.exit(1);
 	});
 
