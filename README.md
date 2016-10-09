@@ -46,8 +46,16 @@
 	
 				{
 					"appName": "",
-					"dailyServer": "192.168.180.10",
-					"dailyServerPath": "/opt/www/build/",
+					"publish": {
+						"daily": {
+							"host": "192.168.180.10",
+							"path": "/opt/www/build/"
+						},
+						"online": {
+							"host": "123.57.42.161",
+							"path": "/opt/www/build/"
+						}
+					},
 					"version": "0.0.1",
 					"auto-entry": true,
 					"bid-js-entry": {
@@ -137,15 +145,27 @@
 			* 线上地址：http://m.100credit.com/工程名称/src/p/demo/index.html
 		* 进行日常发布时，请配置正确appName
 
-* "dailyServer" (string 日常服务器Host（域名或IP地址）):
-	* 说明:
-		* 进行日常发布时，请配置正确dailyServer
-		* 错误的dailyServer将导致日常发布失败
+* "publish" (object 发布相关配置项)
+	* "daily"
+		* "host" (string 日常服务器Host（域名或IP地址）):
+			* 说明:
+				* 进行日常发布时，请配置正确信息
+				* 错误的daily.host将导致日常发布失败
 
-* "dailyServerPath" (string 日常服务器发布路径):
-	* 说明:
-		* 默认为'/opt/www/build/',一般情况下无需修改此配置
-		* 进行日常发布时，请配置正确dailyServerPath
+		* "path" (string 日常服务器发布路径):
+			* 说明:
+				* 默认为'/opt/www/build/',一般情况下无需修改此配置
+				* 进行日常发布时，请配置正确daily.path
+	* "online"
+		* "host" (string 线上服务器Host（域名或IP地址）):
+			* 说明:
+				* 进行线上发布时，请配置正确的信息
+				* 错误的online.host将导致线上发布失败
+
+		* "path" (string 日常服务器发布路径):
+			* 说明:
+				* 默认为'/opt/www/build/',一般情况下无需修改此配置
+				* 进行线上发布时，请配置正确的online.path
 
 ## bid命令详解
 
@@ -162,10 +182,11 @@
 |项目打包|bid build|无|进行本地编译打包|
 ||..|-l\|--local(默认)|(默认)进行本地编译打包|
 ||..|-ol\|--online(暂不可用)|(暂不可用)进行云编译打包|
-||..|-d\|--daily|(可选)进行编译打包并上传至日常服务器|
+||..|-d\|--publishdaily|(可选)进行编译打包并上传至日常服务器|
+||..|-p\|--publishonline|(可选)进行编译打包并上传至线上阿里云服务器|
 ||..|-q\|--quiet(可选)|开启安静模式|
 ||..|-l\|--lint(可选)|开启js编写规范检测（-d发布日常时自动开启）|
-|代码检测|bid lint|-i\|--input <filePath>|对指定文件中的iconfont ttf进行base64转换|
+|iconfont ttf base64|bid iconfont|-i\|--input <filePath>|对指定文件中的iconfont ttf进行base64转换|
 ||..|-o\|--output <filePath> (可选)|将转换后的内容输出值output文件（若没有指定output则替换原有input文件）|
 ||..|相关示例|bid iconfont -i src/c/less/iconfont.less -o src/c/less/iconfont.less|
 
