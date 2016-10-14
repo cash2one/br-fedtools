@@ -89,9 +89,9 @@ program
 	.command('build')
 	.alias('b')
 	.description('进行构建')
-	.option('-o, --online', '远端构建')
 	.option('-d, --publishdaily', '构建并发布发布日常')
-	.option('-p, --publishonline', '构建并发布发布ali云测试服务器')
+	.option('-p, --publishpre', '构建并发布发布ali云预发服务器')
+	.option('-o, --publishonline', '构建并发布发布ali云[线上]服务器')
 	.option('-l, --lint', '构建时检测js代码规范')
 	.action(function(cmd, options) {
 		var env = '本地';
@@ -99,7 +99,7 @@ program
 			env = '远端';
 		} else { // 本地构建
 			var commands = 'gulp';
-			if (program.args[0].publishdaily || program.args[0].publishonline) {
+			if (program.args[0].publishdaily || program.args[0].publishpre || program.args[0].publishonline) {
 				commands += ' publishdaily';
 				inquirer.prompt([{
 					type: 'input',
@@ -144,40 +144,51 @@ program
 								async: true,
 								silent: program.quiet
 							}, function(code, output) {
-
 								if (entrySet.userName) { // 校验用户名
-									var publishHost = '';
-									var publishPath = '';
-									if (program.args[0].publishonline && userConfig.publish && userConfig.publish.online && userConfig.publish.online.host && userConfig.publish.online.path) { // 发布线上阿里云
-										publishHost = userConfig.publish.online.host;
-										publishPath = userConfig.publish.online.path;
-									} else if (program.args[0].publishdaily && userConfig.publish && userConfig.publish.daily && userConfig.publish.daily.host && userConfig.publish.daily.path) { // 发布线上阿里云
-										publishHost = userConfig.publish.daily.host;
-										publishPath = userConfig.publish.daily.path;
-									} else { // 默认发布到日常
-										publishHost = '192.168.180.10';
-										publishPath = '/opt/www/build/';
-										console.log(warnYellow('config.json发布配置异常，经检查publish字段是否设置正确'));
+									var doPublish = function(confArr) {
+										var scpStartTime = new Date().getTime();
+										// exec('scp -r ./build root@101.200.132.102:/home', {
+										// exec('scp -r ./build/ ' + entrySet.userName + '@192.168.180.10:/opt/www/minions', {
+										// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
+										// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
+										// console.log('scp -r ./build/* ' + entrySet.userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
+										confArr.forEach(function(item) {
+											var scpCmd = 'scp -r ./build/* ' + entrySet.userName + '@' + item.host + ':' + item.path + userConfig.appName
+											console.log(scpCmd);
+											exec(scpCmd, {
+												async: true
+											}, function(code, output) {
+												var nowTime = new Date().getTime();
+												console.log(successGreen('已成功上传到 [' + serverType + ']（' + item.host + '） 服务器!'));
+												console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
+											});
+										});
 									}
-
-									var serverType = program.args[0].publishonline ? '线上' : '日常';
-									var scpStartTime = new Date().getTime();
-									// exec('scp -r ./build root@101.200.132.102:/home', {
-									// exec('scp -r ./build/ ' + entrySet.userName + '@192.168.180.10:/opt/www/minions', {
-									// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
-									// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
-									// console.log('scp -r ./build/* ' + entrySet.userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
-									exec('scp -r ./build/* ' + entrySet.userName + '@' + publishHost + ':' + publishPath + userConfig.appName, {
-										async: true
-									}, function(code, output) {
-										var nowTime = new Date().getTime();
-										console.log(successGreen('已成功上传到 ['+serverType+'] 服务器!'));
-										console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
-									});
+									var serverType = '默认';
+									try {
+										if (program.args[0].publishonline) { // 发布线上阿里云
+											serverType = '线上';
+											doPublish(userConfig.publish.online)
+										} else if (program.args[0].publishpre) { // 发布预发阿里云
+											serverType = '预发';
+											doPublish(userConfig.publish.pre)
+										} else if (program.args[0].publishdaily) { // 发布日常
+											serverType = '日常';
+											doPublish(userConfig.publish.daily)
+										} else { // 默认发布到日常
+											doPublish([{
+												host: '192.168.180.10',
+												path: '/opt/www/build/'
+											}])
+											console.log(warnYellow('config.json发布配置异常，经检查publish字段是否设置正确'));
+										}
+									} catch (e) {
+										console.log(errorRed('config.json发布配置错误，' + serverType + '发布失败'));
+										console.log(errorRed(e));
+									}
 								} else {
 									console.log(errorRed('上传失败，无法解析您输入的userName'));
 								}
-
 								var nowTime = new Date().getTime();
 								console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
 								console.log(successGreen('本地构建完毕!'));

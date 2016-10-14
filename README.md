@@ -51,10 +51,17 @@
 							"host": "192.168.180.10",
 							"path": "/opt/www/build/"
 						},
-						"online": {
+						"pre": {
 							"host": "123.57.42.161",
 							"path": "/opt/www/build/"
-						}
+						},
+						"online": [{
+							"host": "101.201.199.232",
+							"path": "/opt/www/build/"
+						},{
+							"host": "123.57.74.74",
+							"path": "/opt/www/build/"
+						}]
 					},
 					"version": "0.0.1",
 					"auto-entry": true,
@@ -146,7 +153,7 @@
 		* 进行日常发布时，请配置正确appName
 
 * "publish" (object 发布相关配置项)
-	* "daily"
+	* "daily" (array 数组，其中每个元素为对象)
 		* "host" (string 日常服务器Host（域名或IP地址）):
 			* 说明:
 				* 进行日常发布时，请配置正确信息
@@ -155,8 +162,20 @@
 		* "path" (string 日常服务器发布路径):
 			* 说明:
 				* 默认为'/opt/www/build/',一般情况下无需修改此配置
-				* 进行日常发布时，请配置正确daily.path
-	* "online"
+				* 进行日常发布时，请配置正确path
+
+	* "pre" (array 数组，其中每个元素为对象)
+		* "host" (string 预发服务器Host（域名或IP地址）):
+			* 说明:
+				* 进行日常发布时，请配置正确信息
+				* 错误的daily.host将导致日常发布失败
+
+		* "path" (string 日常服务器发布路径):
+			* 说明:
+				* 默认为'/opt/www/build/',一般情况下无需修改此配置
+				* 进行日常发布时，请配置正确path
+
+	* "online" (array 数组，其中每个元素为对象）
 		* "host" (string 线上服务器Host（域名或IP地址）):
 			* 说明:
 				* 进行线上发布时，请配置正确的信息
@@ -181,9 +200,9 @@
 ||..|-q\|--quiet(可选)|（开启安静模式进行本地开发，只会显示webpack警告和错误）|
 |项目打包|bid build|无|进行本地编译打包|
 ||..|-l\|--local(默认)|(默认)进行本地编译打包|
-||..|-ol\|--online(暂不可用)|(暂不可用)进行云编译打包|
-||..|-d\|--publishdaily|(可选)进行编译打包并上传至日常服务器|
-||..|-p\|--publishonline|(可选)进行编译打包并上传至线上阿里云服务器|
+||..|-d\|--publishdaily|(可选)进行编译打包并上传至【日常】服务器|
+||..|-p\|--publishpre|(可选)进行编译打包并上传至【预发】阿里云服务器|
+||..|-o\|--publishonline|(可选)进行编译打包并上传至【线上】阿里云服务器|
 ||..|-q\|--quiet(可选)|开启安静模式|
 ||..|-l\|--lint(可选)|开启js编写规范检测（-d发布日常时自动开启）|
 |iconfont ttf base64|bid iconfont|-i\|--input <filePath>|对指定文件中的iconfont ttf进行base64转换|
@@ -201,5 +220,29 @@
 	* var _ = require('underscore');
 
 * 目前入口JS文件命名规则及路径必须约定为：`/src/p/**/index.js`。
+
+* 为了确保线上多台机器同时发布，请预先将本机的密钥复制并命名为线上服务器相应用户的 ~/.ssh/authorized_keys文件
+
+		# 【本地本地】运行：
+			ssh-keygen -t rsa
+		
+		# 结果如下
+			Generating public/private rsa key pair.
+			Enter file in which to save the key (/home/.username/ssh/id_rsa):#回车
+			Enter passphrase (empty for no passphrase):#回车
+			Enter same passphrase again:#回车
+			Your identification has been saved in /home/.username /.ssh/id_rsa.
+			Your public key has been saved in /home/.username /.ssh/id_rsa.pub.
+			The key fingerprint is:
+			38:25:c1:4d:5d:d3:89:bb:46:67:bf:52:af:c3:17:0c username@localhost
+			Generating RSA keys:
+			Key generation complete.
+
+		# 会在用户目录~/.ssh/产生两个文件，id_rsa，id_rsa.pub
+
+		# 把【主机本地】上的id_rsa.pub文件拷贝到【线上主机】的该用户主目录下的.ssh目录下,并且改名为authorized_keys
+
+		# 使用命令：
+			scp 文件名 用户名@服务器:远端路径 进行拷贝
 
 已经支持React，推荐使用React+Redux进行开发。
