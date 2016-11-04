@@ -1,11 +1,24 @@
 {
 	"appName": "",
-	"dailyServer": "192.168.180.10",
-	"dailyServerPath": "/opt/www/build/",
-	"version": "0.0.1",
-	"auto-entry": true,
-	"bid-js-entry": {
+	"publish": {
+		"daily": [{
+			"host": "192.168.180.10",
+			"path": "/opt/www/build/"
+		}],
+		"pre": [{
+			"host": "123.57.42.161",
+			"path": "/opt/www/build/"
+		}],
+		"online": [{
+			"host": "101.201.199.232",
+			"path": "/opt/www/build/"
+		}, {
+			"host": "123.57.74.74",
+			"path": "/opt/www/build/"
+		}]
 	},
+	"version": "",
+	"bid-js-entry": {},
 	"alias": {
 		"zepto": "webpack-zepto"
 	},

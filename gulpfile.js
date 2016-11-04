@@ -15,7 +15,6 @@ var replace = require('gulp-replace');
 var fs = require('fs');
 var path = require('path');
 var Webpack = require('webpack');
-// var inquirer = require('inquirer');
 var gutil = require('gulp-util'); //工具
 var colors = require('cli-color');
 var errorRed = colors.red;
@@ -24,38 +23,17 @@ var warnYellow = colors.yellow;
 var infoBlue = colors.blue;
 var msgMagenta = colors.magentaBright;
 
-var _ = require('underscore');
+// var _ = require('underscore');
 var webpackConfig = require('br-bid/webpack.config');
 var userConfig = require('br-bid/lib/util/getLocalConfig');
 
-var jsEntry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
+// var jsEntry = _.extend(webpackConfig.entry, userConfig['bid-js-entry']);
 var buildInfos = require('br-bid/lib/util/getEntry')(userConfig.version);
 
 var autoEntry = false;
+var isLintFailed = false; // lint是否失败
 
 require('shelljs/global');
-
-var setLocalConfig = function() { // 设置本地构建 webpack.config 配置：entry
-	if (userConfig['auto-entry'] == true) {
-		// 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
-		console.log(infoBlue('将自动匹配合并入口文件...'));
-		// buildInfos = require('br-bid/lib/util/getEntry')(userConfig.version);
-		autoEntry = buildInfos.autoGetEntry;
-		jsEntry = _.extend(webpackConfig.entry, autoEntry);
-	}
-
-	if (userConfig.version) {
-		try {
-			var newJsEntry = JSON.stringify(jsEntry).replace(/\@version/g, userConfig.version);
-			jsEntry = JSON.parse(newJsEntry);
-		} catch (e) {
-			console.log(warnYellow('config["bid-js-entry"]解析@version发生错误'));
-		}
-	} else {
-		console.log(warnYellow('请注意，当前config.json中尚未设置资源的version字段'));
-	}
-	webpackConfig.entry = jsEntry;
-}
 
 var clearBuildConfig = function() {
 	var filename = path.join(process.cwd(), 'build.json');
@@ -66,150 +44,7 @@ var clearBuildConfig = function() {
 	});
 }
 
-if (userConfig['extract-common-to-path']) { // 提取全部页面的公共模块并打包到指定文件位置
-	webpackConfig.plugins.push(new Webpack.optimize.CommonsChunkPlugin(userConfig['extract-common-to-path']));
-}
-
-
-var isLintFailed = false; // lint是否失败
-
-/*
- * 通用构建
- * 
- */
-
-gulp.task('clean', function(cb) { // 重置build目录
-	var buildPath = path.join(process.cwd(), './build')
-	fs.exists(buildPath, function(exists) {
-		if (exists) {
-			del.sync([buildPath]);
-			console.log('正在重建build目录...')
-			cb();
-		} else {
-			console.log('未找到build文件夹...')
-			cb();
-		}
-	})
-});
-
-gulp.task('inlinesource-htmlmin', ['clean'], function(callback) { // 压缩html并迁移至相对目录
-	console.log(infoBlue('正在压缩迁移html...'));
-	var v = userConfig.version ? userConfig.version + '/' : ''
-		// return gulp.src('./src/p/**/*.html')
-	var htmlSrc = buildInfos && buildInfos.config && buildInfos.config.htmlEntry && buildInfos.config.htmlEntry.length ? buildInfos.config.htmlEntry : './src/p/**/*.html';
-	gulp.src(htmlSrc, {
-			base: './src/p'
-		})
-		.pipe(inlinesource())
-		/*.pipe(inlineCss({
-			applyStyleTags: true,
-			applyLinkTags: false,
-			removeStyleTags: false
-		}))*/
-		.pipe(replace(/<(html|body)>/g, ''))
-		.pipe(replace(/\@version\//g, v))
-		.pipe(htmlmin({
-			collapseWhitespace: true
-		}))
-		.pipe(gulp.dest('./build/src/p/'));
-	return callback();
-});
-
-
-/*
- * 构建并需要执行Lint
- * 
- */
-
-gulp.task('webpack-lint', ['lint'], function(callback) { // webpack+lint
-	if (!isLintFailed) {
-		console.log(successGreen('js规范检测通过!'))
-	} else {
-		console.log(warnYellow('请规范您的代码!'))
-	}
-	Webpack(webpackConfig, function(err, stats) {
-		if (err) throw new gutil.PluginError("webpack", err);
-		gutil.log("[webpack]", stats.toString({
-			chunks: false,
-			colors: true,
-			children: false
-		}));
-		callback();
-	});
-});
-
-gulp.task('minify-js-lint', ['webpack-lint'], function() { // lint打包完成后，执行js压缩
-	gulp.src('./build/**/*.js') // 要压缩的js文件
-		.pipe(uglify()) //使用uglify进行压缩,更多配置请参考：
-		.pipe(gulp.dest('./build/')); //压缩后的路径
-});
-
-gulp.task('copy-source-lint', ['minify-js-lint', 'inlinesource-htmlmin'], function(callback) { // 复制 html备份及图片资源
-	console.log(infoBlue('正在备份html...'));
-	var v = userConfig.version ? userConfig.version + '/' : '';
-	// return gulp.src('./src/p/**/*.html')
-	gulp.src('./build/src/p/**/*.html')
-		.pipe(gulp.dest('./build/html_backup/' + v + '/'));
-
-	gulp.src('./src/images/**/*')
-		.pipe(gulp.dest('./build/src/images'));
-
-	clearBuildConfig();
-
-	return callback();
-});
-
-
-/*
- * 构建并不要执行Lint
- * 
- */
-
-gulp.task('init', function(callback) { // 本地构建初始化
-	console.log(infoBlue('初始化本地构建...'));
-	setLocalConfig();
-	callback();
-});
-
-gulp.task('webpack', function(callback) { // 仅webpack，不进行lint
-	Webpack(webpackConfig, function(err, stats) {
-		if (err) throw new gutil.PluginError("webpack", err);
-		gutil.log("[webpack]", stats.toString({
-			chunks: false,
-			colors: true,
-			children: false
-		}));
-		callback();
-	});
-});
-
-gulp.task('minify-js', ['webpack'], function() { // 不lint打包完成后，执行js压缩
-	gulp.src('./build/**/*.js') // 要压缩的js文件
-		.pipe(uglify()) //使用uglify进行压缩,更多配置请参考：
-		.pipe(gulp.dest('./build/')); //压缩后的路径
-});
-
-gulp.task('copy-source', ['minify-js', 'inlinesource-htmlmin'], function(callback) { // 复制 html备份及图片资源
-	console.log(infoBlue('正在复制资源...'));
-	// var v = userConfig.version ? userConfig.version + '/' : ''; // 本地构建时，不备份html
-	// gulp.src('./build/src/p/**/*.html')
-	// 	.pipe(gulp.dest('./build/html_backup/' + v + '/'));
-
-	gulp.src('./src/images/**/*')
-		.pipe(gulp.dest('./build/src/images'));
-
-	// clearBuildConfig();
-
-	callback();
-});
-
-
-/*
- * 发布构建，执行Lint
- * 
- */
-
-gulp.task('publishinit', function(callback) {
+gulp.task('init', function(callback) {
 	console.log(infoBlue('初始化发布...'));
 	if (!buildInfos.config) {
 		buildInfos.config = require(path.join(process.cwd(), 'build.json'));
@@ -226,6 +61,20 @@ gulp.task('publishinit', function(callback) {
 		throw new Error(errorRed('发布失败：config.json中version字段异常或您当前的git环境存在异常。'));
 	}
 	callback(); // 发布初始化
+});
+
+gulp.task('clean', function(cb) { // 重置build目录
+	var buildPath = path.join(process.cwd(), './build')
+	fs.exists(buildPath, function(exists) {
+		if (exists) {
+			del.sync([buildPath]);
+			console.log('正在重建build目录...')
+			cb();
+		} else {
+			console.log('未找到build文件夹...')
+			cb();
+		}
+	})
 });
 
 gulp.task('lint', function() { // 代码健康检测
@@ -307,25 +156,77 @@ gulp.task('lint', function() { // 代码健康检测
 		}));
 });
 
-/*
- * 基础任务
- * 
- */
-
-gulp.task('publishdaily', ['publishinit', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'inlinesource-htmlmin', 'copy-source-lint'], function(callback) { // 日常发布打包
-	callback();
-});
-
-gulp.task('buildlint', ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'inlinesource-htmlmin', 'copy-source-lint']); // 本地构建 + lint 代码检测
-
-gulp.task('default', ['init', 'clean', 'webpack', 'minify-js', 'inlinesource-htmlmin', 'copy-source']); // 本地构建 不进行 lint 代码检测
-
-gulp.task('dolint', ['lint'], function() {
+gulp.task('webpack-lint', ['lint'], function(callback) { // webpack+lint
 	if (!isLintFailed) {
 		console.log(successGreen('js规范检测通过!'))
 	} else {
 		console.log(warnYellow('请规范您的代码!'))
 	}
+	Webpack(webpackConfig, function(err, stats) {
+		if (err) throw new gutil.PluginError("webpack", err);
+		gutil.log("[webpack]", stats.toString({
+			chunks: false,
+			colors: true,
+			children: false
+		}));
+		callback();
+	});
+});
+
+gulp.task('minify-js-lint', ['webpack-lint'], function() { // lint打包完成后，执行js压缩
+	gulp.src('./build/**/*.js') // 要压缩的js文件
+		.pipe(uglify()) //使用uglify进行压缩,更多配置请参考：
+		.pipe(gulp.dest('./build/')); //压缩后的路径
+});
+
+gulp.task('inlinesource-htmlmin', ['clean'], function(callback) { // 压缩html并迁移至相对目录
+	console.log(infoBlue('正在压缩迁移html...'));
+	var v = userConfig.version ? userConfig.version + '/' : ''
+		// return gulp.src('./src/p/**/*.html')
+	var htmlSrc = buildInfos && buildInfos.config && buildInfos.config.htmlEntry && buildInfos.config.htmlEntry.length ? buildInfos.config.htmlEntry : './src/p/**/*.html';
+	// 如果htmlEntry为空数组，则迁移全部html
+	gulp.src(htmlSrc, {
+			base: './src/p'
+		})
+		.pipe(inlinesource())
+		/*.pipe(inlineCss({
+			applyStyleTags: true,
+			applyLinkTags: false,
+			removeStyleTags: false
+		}))*/
+		.pipe(replace(/<(html|body)>/g, ''))
+		.pipe(replace(/\@version\//g, v))
+		.pipe(htmlmin({
+			collapseWhitespace: true
+		}))
+		.pipe(gulp.dest('./build/src/p/'));
+	return callback();
+});
+
+gulp.task('copy-source-lint', ['minify-js-lint', 'inlinesource-htmlmin'], function(callback) { // 复制 html备份及图片资源
+	console.log(infoBlue('正在备份html...'));
+	var v = userConfig.version ? userConfig.version + '/' : '';
+	// return gulp.src('./src/p/**/*.html')
+	gulp.src('./build/src/p/**/*.html')
+		.pipe(gulp.dest('./build/html_backup/' + v + '/'));
+
+	gulp.src('./src/images/**/*')
+		.pipe(gulp.dest('./build/src/images'));
 
 	clearBuildConfig();
-}); // 本地lint 代码检测
+
+	return callback();
+});
+
+gulp.task('build', ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'inlinesource-htmlmin', 'copy-source-lint'], function(callback) { // 日常发布打包
+	callback();
+});
+
+gulp.task('dolint', ['lint'], function() { // 本地lint 代码检测
+	if (!isLintFailed) {
+		console.log(successGreen('js规范检测通过!'))
+	} else {
+		console.log(warnYellow('请规范您的代码!'))
+	}
+	clearBuildConfig();
+}); 

@@ -71,7 +71,7 @@ program
 				}, function(code, output) {
 					var nowTime = new Date().getTime();
 					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-					console.log(successGreen('本地构建完毕!'));
+					console.log(successGreen('代码检测完成!'));
 				});
 				return;
 			});
@@ -89,33 +89,91 @@ program
 	.command('build')
 	.alias('b')
 	.description('进行构建')
+	.option('-a, --buildall', '根据build全部页面')
 	.option('-d, --publishdaily', '构建并发布发布日常')
 	.option('-p, --publishpre', '构建并发布发布ali云预发服务器')
 	.option('-o, --publishonline', '构建并发布发布ali云[线上]服务器')
-	.option('-l, --lint', '构建时检测js代码规范')
 	.action(function(cmd, options) {
 		var env = '本地';
 		if (false && program.args[0].online) { // 远端构建
 			env = '远端';
 		} else { // 本地构建
-			var commands = 'gulp';
+			var commands = 'gulp build';
+			var entrySet = {
+				jsEntry: {},
+				htmlEntry: [] // 为空时将迁移全部html
+			};
+			var inquirerParams = [];
+			var callbackFn = function() {}; // 构建成功后的回调
+			var getInquirerBuild = function() { // 根据 -a 参数判断对哪些页面进行构建
+				if (program.args[0].buildall) { // 对所有页面进行build
+
+				} else { // 根据选择进行build
+					inquirerParams.push({
+						type: 'checkbox',
+						name: 'selectedEntry',
+						message: '请选择需要进行构建的页面:',
+						choices: buildInfos.autoGetHtml.keys
+					});
+				}
+			}
 			if (program.args[0].publishdaily || program.args[0].publishpre || program.args[0].publishonline) {
-				commands += ' publishdaily';
-				inquirer.prompt([{
+				inquirerParams.push({
 					type: 'input',
 					name: 'userName',
 					message: '请输入用户名'
-				}, {
-					type: 'checkbox',
-					name: 'selectedEntry',
-					message: '请选择需要进行构建的页面:',
-					choices: buildInfos.autoGetHtml.keys
-				}]).then(function(answers) {
-					var entrySet = {
-						userName: answers.userName,
-						jsEntry: {},
-						htmlEntry: []
-					};
+				});
+				getInquirerBuild();
+				callbackFn = function(userName) {
+					if (userName) { // 校验用户名
+						var doPublish = function(confArr) {
+							var scpStartTime = new Date().getTime();
+							// exec('scp -r ./build root@101.200.132.102:/home', {
+							// exec('scp -r ./build/ ' + userName + '@192.168.180.10:/opt/www/minions', {
+							// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
+							// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
+							// console.log('scp -r ./build/* ' + userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
+							confArr.forEach(function(item) {
+								var scpCmd = 'scp -r ./build/* ' + userName + '@' + item.host + ':' + item.path + userConfig.appName
+								console.log(scpCmd);
+								exec(scpCmd, {
+									async: true
+								}, function(code, output) {
+									var nowTime = new Date().getTime();
+									console.log(successGreen('已成功上传到 [' + serverType + ']（' + item.host + '） 服务器!'));
+									console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
+								});
+							});
+						}
+						var serverType = '默认';
+						try {
+							if (program.args[0].publishdaily) { // 发布日常
+								serverType = '日常';
+								doPublish(userConfig.publish.daily)
+							} else if (program.args[0].publishpre) { // 发布预发阿里云
+								serverType = '预发';
+								doPublish(userConfig.publish.pre)
+							} else if (program.args[0].publishonline) { // 发布线上阿里云
+								serverType = '线上';
+								doPublish(userConfig.publish.online)
+							} else {
+								warnYellow('发布未成功，因为您没有指定正确的发布环境');
+							}
+						} catch (e) {
+							console.log(errorRed('config.json发布配置错误，' + serverType + '发布失败'));
+							console.log(errorRed(e));
+						}
+					} else {
+						console.log(errorRed('上传失败，无法解析您输入的userName'));
+					}
+				}
+			} else { // 不发布，仅build
+				getInquirerBuild();
+			}
+
+			inquirer.prompt(inquirerParams).then(function(answers) {
+				entrySet.userName = answers.userName ? answers.userName : null;
+				if (!program.args[0].buildall) { // 通过选择进行build
 					answers.selectedEntry.forEach(function(se, index) {
 						for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
 							if (htmlKey.split(se).length > 1) {
@@ -131,100 +189,42 @@ program
 								return true;
 							}
 						}
-					})
-
-					var filename = path.join(envPath.cwdPath, 'build.json');
-					var data = JSON.stringify(entrySet);
-					fs.writeFile(filename, data, function(err) {
-						if (!err) {
-							console.log(successGreen('build.json创建成功'));
-							commands += ' --entry ' + filename;
-							var initTime = new Date().getTime();
-							exec(commands, {
-								async: true,
-								silent: program.quiet
-							}, function(code, output) {
-								if (entrySet.userName) { // 校验用户名
-									var doPublish = function(confArr) {
-										var scpStartTime = new Date().getTime();
-										// exec('scp -r ./build root@101.200.132.102:/home', {
-										// exec('scp -r ./build/ ' + entrySet.userName + '@192.168.180.10:/opt/www/minions', {
-										// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
-										// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
-										// console.log('scp -r ./build/* ' + entrySet.userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
-										confArr.forEach(function(item) {
-											var scpCmd = 'scp -r ./build/* ' + entrySet.userName + '@' + item.host + ':' + item.path + userConfig.appName
-											console.log(scpCmd);
-											exec(scpCmd, {
-												async: true
-											}, function(code, output) {
-												var nowTime = new Date().getTime();
-												console.log(successGreen('已成功上传到 [' + serverType + ']（' + item.host + '） 服务器!'));
-												console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
-											});
-										});
-									}
-									var serverType = '默认';
-									try {
-										if (program.args[0].publishonline) { // 发布线上阿里云
-											serverType = '线上';
-											doPublish(userConfig.publish.online)
-										} else if (program.args[0].publishpre) { // 发布预发阿里云
-											serverType = '预发';
-											doPublish(userConfig.publish.pre)
-										} else if (program.args[0].publishdaily) { // 发布日常
-											serverType = '日常';
-											doPublish(userConfig.publish.daily)
-										} else { // 默认发布到日常
-											doPublish([{
-												host: '192.168.180.10',
-												path: '/opt/www/build/'
-											}])
-											console.log(warnYellow('config.json发布配置异常，经检查publish字段是否设置正确'));
-										}
-									} catch (e) {
-										console.log(errorRed('config.json发布配置错误，' + serverType + '发布失败'));
-										console.log(errorRed(e));
-									}
-								} else {
-									console.log(errorRed('上传失败，无法解析您输入的userName'));
-								}
-								var nowTime = new Date().getTime();
-								console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-								console.log(successGreen('本地构建完毕!'));
-							});
-						} else {
-							console.log(errorRed('build.json写入失败，请检查该文件'));
-						}
 					});
-
-				});
-			} else {
-				if (program.args[0].lint) {
-					commands += ' buildlint';
-				} else {
-					commands += ' default';
+				} else { // buildall 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
+					entrySet.jsEntry = buildInfos.autoGetEntry;
 				}
-				var initTime = new Date().getTime();
-				exec(commands, {
-					async: true,
-					silent: program.quiet
-				}, function(code, output) {
-					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-					console.log(successGreen('本地构建完毕!'));
+
+				var filename = path.join(envPath.cwdPath, 'build.json');
+				var data = JSON.stringify(entrySet);
+				fs.writeFile(filename, data, function(err) {
+					if (!err) {
+						console.log(successGreen('build.json创建成功'));
+						commands += ' --entry ' + filename;
+						var initTime = new Date().getTime();
+						exec(commands, {
+							async: true,
+							silent: program.quiet
+						}, function(code, output) {
+							callbackFn(entrySet.userName);
+							var nowTime = new Date().getTime();
+							console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
+							console.log(successGreen('构建完毕!'));
+						});
+					} else {
+						console.log(errorRed('build.json写入失败，请检查该文件'));
+					}
 				});
-			}
+
+			});
 		}
 		console.log(successGreen('开启' + env + '构建'));
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
-		// console.log('    bid build (-l|--local)   :   进行本地构建（默认使用）');
-		console.log('    bid build -o|--online   :   进行远端构建（暂不可用）');
-		console.log('    bid build -l|--lint   :   本地构建并做代码检查');
 		console.log('    bid build -d|--publishdaily   :   本地构建并发布到日常服务器');
+		console.log('    bid build -p|--publishpre   :   本地构建并发布到预发服务器');
+		console.log('    bid build -o|--online   :   本地构建并发布到线上服务器');
 		console.log('');
 		process.exit(1);
 	});

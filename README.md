@@ -199,12 +199,11 @@
 | |bid dev|-p [端口号] \| --port [端口号]|以指定[端口号]启动本地开发环境|
 ||..|-q\|--quiet(可选)|（开启安静模式进行本地开发，只会显示webpack警告和错误）|
 |项目打包|bid build|无|进行本地编译打包|
-||..|-l\|--local(默认)|(默认)进行本地编译打包|
 ||..|-d\|--publishdaily|(可选)进行编译打包并上传至【日常】服务器|
 ||..|-p\|--publishpre|(可选)进行编译打包并上传至【预发】阿里云服务器|
 ||..|-o\|--publishonline|(可选)进行编译打包并上传至【线上】阿里云服务器|
+||..|-a\|--buildall(可选)|对全部src/p/xxx.html进行构建）|
 ||..|-q\|--quiet(可选)|开启安静模式|
-||..|-l\|--lint(可选)|开启js编写规范检测（-d发布日常时自动开启）|
 |iconfont ttf base64|bid iconfont|-i\|--input <filePath>|对指定文件中的iconfont ttf进行base64转换|
 ||..|-o\|--output <filePath> (可选)|将转换后的内容输出值output文件（若没有指定output则替换原有input文件）|
 ||..|相关示例|bid iconfont -i src/c/less/iconfont.less -o src/c/less/iconfont.less|
