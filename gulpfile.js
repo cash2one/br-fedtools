@@ -175,7 +175,12 @@ gulp.task('webpack-lint', ['lint'], function(callback) { // webpack+lint
 
 gulp.task('minify-js-lint', ['webpack-lint'], function() { // lint打包完成后，执行js压缩
 	gulp.src('./build/**/*.js') // 要压缩的js文件
-		.pipe(uglify()) //使用uglify进行压缩,更多配置请参考：
+		.pipe(uglify({
+			mangle: true, // 类型：Boolean 默认：true 是否修改变量名
+			compress: true, // 类型：Boolean 默认：true 是否完全压缩
+			mangleProperties: true // 将对象内部的属性进行混淆
+			// preserveComments: 'all' // 保留所有注释
+		})) //使用uglify进行压缩,更多配置请参考：https://github.com/mishoo/UglifyJS2/#api-reference
 		.pipe(gulp.dest('./build/')); //压缩后的路径
 });
 
