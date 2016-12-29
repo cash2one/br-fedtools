@@ -33,7 +33,12 @@ var Promise = require('promise');
 var write = Promise.denodeify(fs.writeFile);
 
 var co = require('co');
+var thunkify = require('thunkify');
 var urllib = require('urllib');
+
+var request = require('request');
+var handleApi = thunkify(request.post);
+var execThunk = thunkify(exec);
 
 program
 	.allowUnknownOption() //不报错误
@@ -54,33 +59,60 @@ program
 	.command('lint')
 	.alias('l')
 	.description('代码检测')
-	.option('-i, --input [type]', '路径')
+	// .option('-i, --input [type]', '路径')
 	.action(function(cmd, options) {
 		console.log(successGreen('开始代码检测'));
-
-		var entrySet = {
-			lintPath: program.args[0].input || false
-		};
-		var filename = path.join(envPath.cwdPath, 'build.json');
-		var promise = write(filename, JSON.stringify(entrySet), 'utf8')
-			.then(function() {
-				var initTime = new Date().getTime();
-				exec('gulp dolint', {
-					async: true,
-					silent: program.quiet
-				}, function(code, output) {
+		var deployJSON = null;
+		co(function*() {
+			inquirer.prompt([{
+				type: 'checkbox',
+				name: 'selectedEntry',
+				message: '请选择需要进行代码检测的页面:',
+				choices: buildInfos.autoGetHtml.keys
+			}]).then(function(answers) {
+				deployJSON = answers;
+				deployJSON.jsEntry = {};
+				answers.selectedEntry.forEach(function(se, index) { // 生成发布列表，构建列表
+					for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
+						if (htmlKey.split(se).length > 1) {
+							if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
+								deployJSON.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
+							}
+							break;
+						}
+					}
+				});
+				return deployJSON;
+			}).then(function(data) {
+				co(function*() {
+					var filename = path.join(envPath.cwdPath, 'build.json');
+					var jsonData = JSON.stringify(data);
+					try {
+						fs.writeFileSync(filename, jsonData);
+						console.log(data);
+						console.log(successGreen('build.json创建成功'));
+					} catch (err) {
+						console.log(errorRed('build.json写入失败，请检查该文件'));
+						console.log(errorRed(JSON.stringify(err)));
+					}
+					var initTime = new Date().getTime();
+					try {
+						yield execThunk('gulp lint');
+					} catch (err) {
+						console.log(errorRed('代码检测异常！'));
+						console.log(errorRed(err));
+					}
 					var nowTime = new Date().getTime();
 					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
 					console.log(successGreen('代码检测完成!'));
 				});
-				return;
 			});
+		});
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
-		console.log('    bid lint   :   检查全部js文件');
-		console.log('    bid lint -i|--input [src]  :   检查指定路径（src）的文件');
+		console.log('    bid lint   :   js代码规范检测');
 		console.log('');
 		process.exit(1);
 	});
@@ -194,6 +226,18 @@ program
 					entrySet.jsEntry = buildInfos.autoGetEntry;
 				}
 
+				var chmod777 = function(callback) {
+					var start777 = new Date().getTime();
+					exec('chmod -R 777 ./build', {
+						async: true,
+						silent: program.quiet
+					}, function(code, output) {
+						var end777 = new Date().getTime();
+						console.log(successGreen('修改build权限完成，共耗时:' + (end777 - start777) / 1000, 's'));
+						// chmod777();
+					});
+				}
+
 				var filename = path.join(envPath.cwdPath, 'build.json');
 				var data = JSON.stringify(entrySet);
 				fs.writeFile(filename, data, function(err) {
@@ -201,10 +245,15 @@ program
 						console.log(successGreen('build.json创建成功'));
 						commands += ' --entry ' + filename;
 						var initTime = new Date().getTime();
+						console.log(commands)
 						exec(commands, {
 							async: true,
 							silent: program.quiet
 						}, function(code, output) {
+							chmod777();
+							console.log('done 777')
+							console.log('done 777')
+							console.log('done 777')
 							callbackFn(entrySet.userName);
 							var nowTime = new Date().getTime();
 							console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
@@ -281,7 +330,8 @@ program
 	}).on('--help', function() {
 		console.log('  举个栗子:');
 		console.log('');
-		console.log('    bid init   ,   在当前路径下初始化工程目录');
+		console.log('    bid init     ,   在当前路径下初始化[通用]工程目录');
+		console.log('    bid init -r  ,   在当前路径下初始化[react]工程目录');
 		console.log('');
 		process.exit(1);
 	});
@@ -392,6 +442,203 @@ program
 		});
 
 	}).on('--help', function() {
+		process.exit(1);
+	});
+
+program
+	.command('deploy')
+	.alias('p')
+	.description('进行构建')
+	.action(function(cmd, options) {
+		var deployJSON = null; // build.json源
+		var isPublish = false; // 是否构建后调用发布接口
+		var configure = {}; // 读取自本地工程config.json配置
+		var setConfigVersion = thunkify(function(callback) { // 检测当前git所处分支，并配置config.json
+			gitTools.setConfigVersionThunk(function(err, config) {
+				return callback(err, config);
+			});
+		});
+
+		co(function*() {
+			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			inquirer.prompt([{
+				type: 'input',
+				name: 'username',
+				message: '请输入您的用户名:'
+			}, {
+				type: 'password',
+				name: 'password',
+				message: '请输入您的密码:'
+			}, {
+				type: 'list',
+				name: 'env',
+				message: '请选择发布环境:',
+				choices: [{
+						name: '本地生成部署配置',
+						value: 'local'
+					}, {
+						name: '日常发布（相对路径构建，同时构建发布js、html）',
+						value: 'daily'
+					}, {
+						name: '预发发布（相对路径构建，同时构建发布js、html）',
+						value: 'pre'
+					}, {
+						name: '【本地构建】线上方式（在本地完成构建，但不发布）',
+						value: 'production-build'
+					}, {
+						name: '线上发布（CDN路径构建，仅构建发布html）',
+						value: 'production'
+					}] //['本地生成部署配置', '日常环境', '预发环境', '线上环境']
+			}, {
+				type: 'checkbox',
+				name: 'selectedEntry',
+				message: '请选择需要进行构建的页面:',
+				choices: buildInfos.autoGetHtml.keys
+			}]).then(function(answers) {
+				deployJSON = answers;
+				deployJSON.htmlEntry = [];
+				deployJSON.jsEntry = {};
+				deployJSON.appName = configure.appName; // 应用名
+				deployJSON.remotes = configure.remotes; // Git远端地址
+				deployJSON.version = configure.version; // Git分支版本
+				deployJSON.publish = configure.publish; // 发布配置信息
+				deployJSON.cdnhost = configure.cdnhost; // 静态资源cdn域名
+
+				answers.selectedEntry.forEach(function(se, index) { // 生成发布列表，构建列表
+					for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
+						if (htmlKey.split(se).length > 1) {
+							var tmpSrc = './' + htmlKey + '.html';
+							if (configure.version) {
+								tmpSrc = tmpSrc.replace(configure.version + '/', '');
+							}
+							if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
+								deployJSON.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
+							}
+							deployJSON.htmlEntry.push(tmpSrc);
+							break;
+						}
+					}
+				});
+				return deployJSON;
+			}).then(function(data) {
+				co(function*() {
+					var filename = path.join(envPath.cwdPath, 'build.json');
+					console.log(successGreen('gulp deploy --entry ' + filename + ' --env ' + data.env));
+					var jsonData = JSON.stringify(data);
+					try {
+						fs.writeFileSync(filename, jsonData);
+						console.log(successGreen('build.json创建成功'));
+					} catch (err) {
+						console.log(errorRed('build.json写入失败，请检查该文件'));
+						console.log(errorRed(JSON.stringify(err)));
+					}
+					if (data.env === 'local') { // 默认只生成build.json
+						console.log(successGreen('生成发布配置成功，流程结束，请查看工程目录下的build.json文件。'));
+						return false;
+					} else if (data.env === 'daily') {
+						isPublish = true;
+					} else if (data.env === 'pre') {
+						isPublish = true;
+					} else if (data.env === 'production') {
+						isPublish = true;
+					} else if (data.env === 'production-build') { // 使用线上构建方式，在本地完成构建，但不发布
+						isPublish = false;
+						try {
+							yield execThunk('gulp deploy --entry ' + filename + ' --env production'); // 在本地进行线上构建
+						} catch (e) {
+							console.log(errorRed('本地线上构建失败！'));
+							console.log(errorRed(JSON.stringify(e)));
+						}
+					}
+					try {
+						if (isPublish) {
+							var resp = yield handleApi({ // 调用发布接口
+								url: configure.publishAPI,
+								form: data
+							});
+							var res = {};
+							try {
+								res = JSON.parse(resp[1]); // 获取res.body
+							} catch (e) {
+								console.log(errorRed('发布接口返回异常'));
+								console.log(errorRed(JSON.stringify(e)));
+							}
+							if (res.code == 200) {
+								console.log(successGreen('正在进行' + data.env + '发布:' + data.appName + res.data.uid + res.data.timestamp));
+								console.log(successGreen('请在以下页面中查看发布进度: https://platform.100credit.com/awp/publishResult?id=' + data.appName + res.data.uid + res.data.timestamp));
+							} else {
+								console.log(errorRed('发布异常'));
+								console.log(errorRed(JSON.stringify(res)));
+							}
+						}
+					} catch (e) {
+						console.log(errorRed('发布异常'));
+						console.log(errorRed(JSON.stringify(e)));
+					}
+					console.log(successGreen('操作完成。'));
+				});
+			});
+		});
+	}).on('--help', function() {
+		console.log('  举个栗子:');
+		console.log('');
+		console.log('bid deploy');
+		console.log('');
+		process.exit(1);
+	});
+
+program
+	.command('tag') // 由git hock触发shell脚本，shell拉取指定tag之后，调用bid tag,
+	.alias('p')
+	.description('执行git tag，通过sh，全量发布Javascript至cdn；并且使用线上cdn js资源构建及发布html到预发环境')
+	.action(function(cmd, options) {
+		var deployJSON = {};
+		var configure = {};
+
+		var setConfigVersion = thunkify(function(callback) {
+			gitTools.setConfigVersionThunk(function(err, config) {
+				return callback(err, config);
+			});
+		});
+
+		co(function*() {
+			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			deployJSON.jsEntry = buildInfos.autoGetEntry;
+			deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
+			deployJSON.version = configure.version; // Git分支版本
+			deployJSON.appName = configure.appName; // 应用名
+			deployJSON.remotes = configure.remotes; // Git远端地址
+			deployJSON.publish = configure.publish; // 发布配置信息
+			deployJSON.cdnhost = configure.cdnhost; // 静态资源cdn域名
+
+			var filename = path.join(envPath.cwdPath, 'build.json');
+			var jsonData = JSON.stringify(deployJSON);
+			try {
+				fs.writeFileSync(filename, jsonData);
+				console.log(successGreen('build.json创建成功'));
+			} catch (err) {
+				console.log(errorRed('build.json写入失败，请检查该文件'));
+				console.log(errorRed(err));
+			}
+			var commands = 'gulp deploy --entry ' + filename + ' --env tag';
+			console.log(successGreen(commands));
+			var initTime = new Date().getTime();
+			exec(commands, {
+				async: true,
+				silent: program.quiet
+			}, function(code, output) {
+				var nowTime = new Date().getTime();
+				console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
+				console.log(successGreen('javascripts资源构建完毕!'));
+			});
+
+		});
+
+	}).on('--help', function() {
+		console.log('  举个栗子:');
+		console.log('');
+		console.log('bid tag');
+		console.log('');
 		process.exit(1);
 	});
 

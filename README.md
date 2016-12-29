@@ -63,7 +63,9 @@
 							"path": "/opt/www/build/"
 						}]
 					},
+					"remotes": "http://gitlab.100credit.cn/fed/xiaqiu.git",
 					"version": "0.0.1",
+					"cdnhost": "//cdn.shuquwangluo.cn",
 					"auto-entry": true,
 					"bid-js-entry": {
 						"src/p/index/index": "./src/p/index/index.js",
@@ -79,7 +81,9 @@
 					"extract-common-to-path": "./src/p/library.min.js",
 					"noParse": ['./src/p/index/index.js']
 				}
-
+* "remotes" (git版本库地址):
+	* 说明:
+		* 发布时脚本需要拉取当前git仓库及相应分支，使用远端脚本发布必填字段。
 * "version" (string 版本号):
 	* 说明:
 	
@@ -95,7 +99,15 @@
 		
 		* 根据分支号设置路径，主要目的是便于发布后对代码进行管理、引用、回滚等操作。
 		
-	* 注意：每次启动`bid dev`时，如果当前处于daily/x.y.z分支，且config.json的version字段与当前分支号不一致，config.json的version字段将被自动替换为当前分支号。		
+	* 注意：每次启动`bid dev`时，如果当前处于daily/x.y.z分支，且config.json的version字段与当前分支号不一致，config.json的version字段将被自动替换为当前分支号。
+* "cdnhost" (前端js静态资源cdn域名):
+	* 说明:
+		* 用于在发布时，使用线上cdn地址，替换html中形如`<script type="text/javascript" src="@cdnhost/src/p/feedback/@version/index.js"></script>`的文件引用。
+		* 替换规则：
+			* 形如`@cdnhost/src/p/feedback/@version/index.js`将会被替换为`//cdn.shuquwangluo.cn/xiaqiu/src/p/about/0.2.1/index.js`
+			* cdnhost将会替换`@cdnhost`
+			* version将会替换`cdnhost + appName + `
+			* 以上示例地址`@cdnhost/src/p/feedback/@version/index.js`将做如下转换：@cdnhost + appName + `/src/p/feedback/` + version + `/index.js`
 * "auto-entry" (boolean): 
  
 	* true: 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
