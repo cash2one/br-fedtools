@@ -35,6 +35,7 @@
 * `注意：一定要在项目工程目录下启动开发调试命令，否则将不能正确解析提取资源文件`
 
 ## 编译打包
+
 * 本地编译打包： **bid build -l (默认)**
 
 * 云编译打包： 后续开发...  **bid build (暂时不可用)**
@@ -42,39 +43,43 @@
 * 注意：`使用打包功能前，请确认您已经全局安装了gulp模块： sudo npm install gulp -g `
 
 ## 配置文件config.js（打包编译、js引用）
+
 * 示例说明：
 	
-				{
-					"appName": "",
-					"publish": {
-						"daily": {
-							"host": "192.168.180.10",
-							"path": "/opt/www/build/"
-						},
-						"pre": {
-							"host": "123.57.42.161",
-							"path": "/opt/www/build/"
-						},
-						"online": [{
-							"host": "101.201.199.232",
-							"path": "/opt/www/build/"
-						},{
-							"host": "123.57.74.74",
-							"path": "/opt/www/build/"
-						}]
-					},
-					"remotes": "http://gitlab.100credit.cn/fed/xiaqiu.git",
-					"version": "0.0.1",
-					"cdnhost": "//cdn.shuquwangluo.cn",
-					"publishAPI": "http://192.168.0.243:3000/api/awp/publishOnline.do",
-					"alias": {
-						"zepto": "webpack-zepto",
-						"myslider": "@br/common/myslider",
-						"myslider": "../../c/common/myslider"
-					},
-					"extract-common-to-path": "./src/p/library.min.js",
-					"noParse": ['./src/p/index/index.js']
-				}
+	```
+	{
+		"appName": "",
+		"publish": {
+			"daily": {
+				"host": "192.168.180.10",
+				"path": "/opt/www/build/"
+			},
+			"pre": {
+				"host": "123.57.42.161",
+				"path": "/opt/www/build/"
+			},
+			"online": [{
+				"host": "101.201.199.232",
+				"path": "/opt/www/build/"
+			},{
+				"host": "123.57.74.74",
+				"path": "/opt/www/build/"
+			}]
+		},
+		"remotes": "http://gitlab.100credit.cn/fed/xiaqiu.git",
+		"version": "0.0.1",
+		"cdnhost": "//cdn.shuquwangluo.cn",
+		"publishAPI": "http://192.168.0.243:3000/api/awp/publishOnline.do",
+		"alias": {
+			"zepto": "webpack-zepto",
+			"myslider": "@br/common/myslider",
+			"myslider": "../../c/common/myslider"
+		},
+		"extract-common-to-path": "./src/p/library.min.js",
+		"noParse": ['./src/p/index/index.js']
+	}
+	```
+
 * "remotes" (git版本库地址):
 	* 说明:
 		* 发布时脚本需要拉取当前git仓库及相应分支，使用远端脚本发布必填字段。
@@ -105,6 +110,7 @@
 			* 以上示例地址`@cdnhost/src/p/feedback/@version/index.js`将做如下转换：@cdnhost + appName + `/src/p/feedback/` + version + `/index.js`
 
 * "publishAPI"（发布后台接口地址）
+
 	* 说明:
 		* `发布后台接口`接收`bid deploy`命令生成出来的`build.json`，并根据`build.json`进行发布
 		* 发布流程
