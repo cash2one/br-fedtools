@@ -66,13 +66,7 @@
 					"remotes": "http://gitlab.100credit.cn/fed/xiaqiu.git",
 					"version": "0.0.1",
 					"cdnhost": "//cdn.shuquwangluo.cn",
-					"auto-entry": true,
-					"bid-js-entry": {
-						"src/p/index/index": "./src/p/index/index.js",
-						"src/p/bb/index": "./src/p/bb/index.js",
-						"src/p/react-index/@version/index": "./src/p/react-index/@version/index.js",
-						"src/p/index/@version/index": "./src/p/index/@version/index.js"
-					},
+					"publishAPI": "http://192.168.0.243:3000/api/awp/publishOnline.do",
 					"alias": {
 						"zepto": "webpack-zepto",
 						"myslider": "@br/common/myslider",
@@ -100,6 +94,7 @@
 		* 根据分支号设置路径，主要目的是便于发布后对代码进行管理、引用、回滚等操作。
 		
 	* 注意：每次启动`bid dev`时，如果当前处于daily/x.y.z分支，且config.json的version字段与当前分支号不一致，config.json的version字段将被自动替换为当前分支号。
+
 * "cdnhost" (前端js静态资源cdn域名):
 	* 说明:
 		* 用于在发布时，使用线上cdn地址，替换html中形如`<script type="text/javascript" src="@cdnhost/src/p/feedback/@version/index.js"></script>`的文件引用。
@@ -108,21 +103,17 @@
 			* cdnhost将会替换`@cdnhost`
 			* version将会替换`cdnhost + appName + `
 			* 以上示例地址`@cdnhost/src/p/feedback/@version/index.js`将做如下转换：@cdnhost + appName + `/src/p/feedback/` + version + `/index.js`
-* "auto-entry" (boolean): 
- 
-	* true: 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
 
-	* false: 只根据config.json中的`bid-js-entry`字段来打包js入口文件
-
-* "bid-js-entry" (object): 
-
-	*  前端JS入口映射map
-	
-		| -----| key[js build输出路径] | value[入口js源文件地址] |
-		| -----| -----|:----:|
-		| 示例| "src/p/index/index"|"./src/p/index/index.js"|
-
-	* 若为空则将自动匹配src/p下面所有的index.js作为入口js，并在build时输出到/build/[key]位置。
+* "publishAPI"（发布后台接口地址）
+	* 说明:
+		* `发布后台接口`接收`bid deploy`命令生成出来的`build.json`，并根据`build.json`进行发布
+		* 发布流程
+			* api接收`build.json`并将其存储至本地`$BuildJSONPath`（存储后的路径）位置（作为shell读取配置之用）
+			* 调用服务端shell脚本并传递生成的`build.json`路径`$BuildJSONPath`
+			* shell根据`build.json`中的`remote`及`version`检出相应git分支，并执行`bid update`更新依赖
+			* 执行`gulp deploy --entry $BuildJSONPath --env $BuildJSONPath.env`进行构建
+			* 同时shell将构建日志输出至指定文件中
+			* 构建完毕后，根据`build.json`中的env及publish配置执行发布
 	
 * "alias" (object):
  
