@@ -13,6 +13,7 @@ var del = require('del');
 var jshint = require('gulp-jshint');
 var inlinesource = require('gulp-inline-source');
 var htmlmin = require('gulp-htmlmin');
+var less = require('gulp-less');
 var inlineCss = require('gulp-inline-css');
 var replace = require('gulp-replace');
 var fs = require('fs');
@@ -39,20 +40,19 @@ var deployTask = []; // gulp 任务序列
 
 if (env === 'production' || env === 'production-build') {
 	//【仅构建和发布html】或【仅进行线上构建不发布】 线上构建，由于线上使用cdn，需要剥离html和js,发布线上
-	deployTask = ['init', 'clean', 'buildhtml'];
+	deployTask = ['init', 'clean', 'buildLess', 'buildhtml'];
 	buildConfig.htmlBuildPath = './deploy/html/build/';
 } else if (env === 'tag') {
 	//【仅构建和发布js文件】 由git hock触发，全量build发布构建js文件到线上,并且将使用cdn地址的html发布到预发环境
-	deployTask = ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'buildhtml'];
+	deployTask = ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'buildLess', 'buildhtml'];
 	buildConfig.jsBuildPath = './deploy/javascripts/build/';
 	buildConfig.htmlBuildPath = './deploy/html/build/';
 } else if (env === 'daily' || env === 'pre') {
 	//【构建全部html及js文件】 日常、预发构建 构建后js、html路径一致
-	deployTask = ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'buildhtml'];;
+	deployTask = ['init', 'clean', 'lint', 'webpack-lint', 'minify-js-lint', 'buildLess', 'buildhtml'];;
 	buildConfig.jsBuildPath = './deploy/build/';
 	buildConfig.htmlBuildPath = './deploy/build/';
 } else {
-	deployTask = [];
 	console.log(errorRed('您选择的构建环境异常！构建结束。'));
 }
 var webpackConfig = require('br-bid/webpack.config')(buildConfig.jsBuildPath);
@@ -90,7 +90,7 @@ gulp.task('clean', function(cb) { // 重置build目录
 			console.log(infoBlue('未找到build文件夹...'))
 			cb();
 		}
-	})
+	});
 });
 
 gulp.task('lint', function() { // 代码健康检测
@@ -185,7 +185,19 @@ gulp.task('minify-js-lint', ['webpack-lint'], function() { // lint打包完成�
 		.pipe(gulp.dest(buildConfig.jsBuildPath)); //压缩后的路径
 });
 
-gulp.task('buildhtml', ['init', 'clean'], function(callback) { // 压缩html并迁移至相对目录
+gulp.task('buildLess', function(callback) {
+	//编译src目录下的所有less文件
+	console.log(infoBlue('正在编译Less...'));
+	gulp.src('./src/**/**/*.less')
+		.pipe(less())
+		.pipe(gulp.dest('./src/'));
+	setTimeout(function() { // 解决css没有生成就进行callback的问题
+		console.log(infoBlue('编译Less结束...'));
+		callback();
+	}, 3000);
+});
+
+gulp.task('buildhtml', ['init', 'clean', 'buildLess'], function(callback) { // 压缩html并迁移至相对目录
 	console.log(infoBlue('正在压缩迁移html...'));
 	var v = buildInfos.version ? buildInfos.version : '';
 	// return gulp.src('./src/p/**/*.html')
@@ -221,7 +233,7 @@ gulp.task('buildhtml', ['init', 'clean'], function(callback) { // 压缩html并�
 			}))
 			.pipe(gulp.dest(buildConfig.htmlBuildPath + 'src/p/'));
 	}
-	return callback();
+	// return callback();
 });
 
 gulp.task('deploy', deployTask, function(callback) {
