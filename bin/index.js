@@ -20,7 +20,7 @@ var errorRed = colors.red;
 var successGreen = colors.green;
 var warnYellow = colors.yellow;
 var infoBlue = colors.blue;
-var dependencies = ' webpack gulp gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace jshint underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
+var dependencies = ' webpack gulp gulp-less gulp-uglify del gulp-jshint gulp-inline-source gulp-htmlmin gulp-inline-css gulp-replace jshint underscore gulp-util cli-color br-bid react react-dom redux react-redux redux-thunk';
 
 var inquirer = require('inquirer');
 var fs = require('fs');
@@ -649,6 +649,11 @@ program
 				name: 'selectedEntry',
 				message: '请选择需要进行构建的页面:',
 				choices: buildInfos.autoGetHtml.keys
+			},{
+				type: 'confirm',
+				name: 'forceupdate',
+				message: '是否在构建时对项目依赖进行升级（可能会减慢编译速度）',
+				default: false
 			}]).then(function(answers) {
 				deployJSON = answers;
 				deployJSON.htmlEntry = [];
