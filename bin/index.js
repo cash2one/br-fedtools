@@ -649,7 +649,7 @@ program
 				name: 'selectedEntry',
 				message: '请选择需要进行构建的页面:',
 				choices: buildInfos.autoGetHtml.keys
-			},{
+			}, {
 				type: 'confirm',
 				name: 'forceupdate',
 				message: '是否在构建时对项目依赖进行升级（可能会减慢编译速度）',
@@ -681,6 +681,7 @@ program
 				});
 				return deployJSON;
 			}).then(function(data) {
+				var platformHost = 'http://platform.100credit.com';
 				co(function*() {
 					var filename = path.join(envPath.cwdPath, 'build.json');
 					console.log(successGreen('gulp deploy --entry ' + filename + ' --env ' + data.env));
@@ -696,10 +697,13 @@ program
 						console.log(successGreen('生成发布配置成功，流程结束，请查看工程目录下的build.json文件。'));
 						return false;
 					} else if (data.env === 'daily') {
+						platformHost = 'http://platformdev.100credit.com';
 						isPublish = true;
 					} else if (data.env === 'pre') {
+						platformHost = 'http://platform.100credit.com';
 						isPublish = true;
 					} else if (data.env === 'production') {
+						platformHost = 'http://platform.100credit.com';
 						isPublish = true;
 					} else if (data.env === 'production-build') { // 使用线上构建方式，在本地完成构建，但不发布
 						isPublish = false;
@@ -724,8 +728,8 @@ program
 								console.log(errorRed(JSON.stringify(e)));
 							}
 							if (res.code == 200) {
-								console.log(successGreen('正在进行' + data.env + '发布:' + data.appName + res.data.uid + res.data.timestamp));
-								console.log(successGreen('请在以下页面中查看发布进度: https://platform.100credit.com/awp/publishResult?id=' + data.appName + res.data.uid + res.data.timestamp));
+								console.log(successGreen('正在进行' + data.env + '发布:' + res.data.publishKey));
+								console.log(successGreen('请在以下页面中查看发布进度: ' + platformHost + '/awp/logmonitor?f=' + data.appName + '/' + res.data.publishKey + '.log'));
 							} else {
 								console.log(errorRed('发布异常'));
 								console.log(errorRed(JSON.stringify(res)));
