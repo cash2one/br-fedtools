@@ -519,7 +519,7 @@ program
 		} else { // 本地node_module依赖
 			console.log(infoBlue('正在更新本地模块...'));
 			var initTime = new Date().getTime();
-			exec('npm install ' + dependencies, {
+			exec('npm install ' + dependencies + '||', {
 				async: true,
 				silent: program.quiet
 			}, function(code, output) {
@@ -616,6 +616,7 @@ program
 
 		co(function*() {
 			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
 			inquirer.prompt([{
 				type: 'input',
 				name: 'username',
@@ -767,6 +768,7 @@ program
 
 		co(function*() {
 			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
 			deployJSON.jsEntry = buildInfos.autoGetEntry;
 			deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
 			deployJSON.version = configure.version; // Git分支版本
