@@ -84,12 +84,14 @@ program
 				});
 				return deployJSON;
 			}).then(function(data) {
+				if (data.selectedEntry.length == 0) {
+					return console.log(errorRed('没有选择任何页面,检测结束'));
+				}
 				co(function*() {
 					var filename = path.join(envPath.cwdPath, 'build.json');
 					var jsonData = JSON.stringify(data);
 					try {
 						fs.writeFileSync(filename, jsonData);
-						console.log(data);
 						console.log(successGreen('build.json创建成功'));
 					} catch (err) {
 						console.log(errorRed('build.json写入失败，请检查该文件'));
@@ -293,7 +295,11 @@ program
 		});
 
 		co(function*() {
-			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			try {
+				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			} catch (e) {
+				console.log(errorRed('警告：当前不是git开发环境！'))
+			}
 			inquirer.prompt([{
 				type: 'input',
 				name: 'username',
@@ -344,6 +350,9 @@ program
 				});
 				return deployJSON;
 			}).then(function(data) {
+				if (data.selectedEntry.length == 0) {
+					return console.log(errorRed('没有选择任何页面,构建结束'));
+				}
 				co(function*() {
 					var filename = path.join(envPath.cwdPath, 'build.json');
 					console.log(successGreen('gulp deploy --entry ' + filename + ' --env ' + data.env));
@@ -472,14 +481,18 @@ program
 			'dirname': dirname,
 			'react': program.react
 		}, function() { // 初始化常规工程
-			console.log(infoBlue('正在安装构建依赖...'));
+			console.log(infoBlue('正在安装工程构建所需要的依赖模块...'));
 			var initTime = new Date().getTime();
-			exec('npm install ' + dependencies, {
-				async: true,
-				silent: program.quiet
-			}, function(code, output) {
+			fileGenerator.dependenciesGenerator({ // 复制依赖文件Node_modules
+				'dirname': dirname
+			}, function(error) {
 				var nowTime = new Date().getTime();
-				console.log(successGreen('安装依赖完成!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
+				if (!error) {
+					console.log(successGreen('依赖文件拷贝完成!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
+				} else {
+					console.log(errorRed('拷贝依赖文件失败!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
+					console.log(errorRed(error));
+				}
 			});
 		});
 	}).on('--help', function() {
@@ -494,40 +507,22 @@ program
 program
 	.command('update')
 	.alias('u')
-	.description('更新全局依赖模块')
-	.option('-f, --force [type]', '强制重新安装全部模块')
-	.option('-g, --global', '全局模式')
+	.description('更新工程构建所需要的依赖模块')
 	.action(function(cmd, options) {
-		if (program.args[0].global) { // 更新全局依赖
-			console.log(successGreen('正在更新全局依赖模块,请稍后'));
-			var settings = {
-				quiet: false
-			};
-			if (program.quiet) { // 安静模式
-				settings.quiet = true;
-			}
-			if (program.args[0].force) { // 强制更新，则重新安装全部全局依赖npm模块
-				settings.moduleName = program.args[0].force;
-				npmInstall.install(settings, function() {
-					console.log(successGreen('强制更新完成'));
-				});
-			} else {
-				npmInstall.update(settings, function() {
-					console.log(successGreen('更新完成'));
-				});
-			}
-		} else { // 本地node_module依赖
-			console.log(infoBlue('正在更新本地模块...'));
-			var initTime = new Date().getTime();
-			exec('npm install ' + dependencies + '||', {
-				async: true,
-				silent: program.quiet
-			}, function(code, output) {
-				var nowTime = new Date().getTime();
+		console.log(infoBlue('开始更新工程构建所需要的依赖模块...'));
+		var initTime = new Date().getTime();
+		var dirname = path.join(process.cwd(), './');
+		fileGenerator.dependenciesGenerator({ // 复制依赖文件Node_modules
+			'dirname': dirname
+		}, function(error) {
+			var nowTime = new Date().getTime();
+			if (!error) {
 				console.log(successGreen('依赖更新完成!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
-			});
-		}
-
+			} else {
+				console.log(errorRed('拷贝依赖文件失败!'), infoBlue('共耗时:' + (nowTime - initTime) / 1000, 's'));
+				console.log(errorRed(error));
+			}
+		});
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
@@ -615,7 +610,12 @@ program
 		});
 
 		co(function*() {
-			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			try {
+				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			} catch (e) {
+				console.log(errorRed('警告：当前不是git开发环境！'))
+			}
+			// configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
 			buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
 			inquirer.prompt([{
 				type: 'input',
@@ -665,83 +665,115 @@ program
 				deployJSON.publish = configure.publish; // 发布配置信息
 				deployJSON.cdnhost = configure.cdnhost; // 静态资源cdn域名
 
-				answers.selectedEntry.forEach(function(se, index) { // 生成发布列表，构建列表
-					for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
-						if (htmlKey.split(se).length > 1) {
-							var tmpSrc = './' + htmlKey + '.html';
-							if (configure.version) {
-								tmpSrc = tmpSrc.replace(configure.version + '/', '');
+				if (answers.selectedEntry.length) {
+					answers.selectedEntry.forEach(function(se, index) { // 生成发布列表，构建列表
+						for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
+							if (htmlKey.split(se).length > 1) {
+								var tmpSrc = './' + htmlKey + '.html';
+								if (configure.version) {
+									tmpSrc = tmpSrc.replace(configure.version + '/', '');
+								}
+								if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
+									deployJSON.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
+								}
+								deployJSON.htmlEntry.push(tmpSrc);
+								break;
 							}
-							if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
-								deployJSON.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
-							}
-							deployJSON.htmlEntry.push(tmpSrc);
-							break;
 						}
-					}
-				});
-				return deployJSON;
+					});
+					return deployJSON;
+				} else {
+					return false;
+				}
 			}).then(function(data) {
-				var platformHost = 'http://platform.100credit.com';
-				co(function*() {
-					var filename = path.join(envPath.cwdPath, 'build.json');
-					console.log(successGreen('gulp deploy --entry ' + filename + ' --env ' + data.env));
-					var jsonData = JSON.stringify(data);
-					try {
-						fs.writeFileSync(filename, jsonData);
-						console.log(successGreen('build.json创建成功'));
-					} catch (err) {
-						console.log(errorRed('build.json写入失败，请检查该文件'));
-						console.log(errorRed(JSON.stringify(err)));
-					}
-					if (data.env === 'local') { // 默认只生成build.json
-						console.log(successGreen('生成发布配置成功，流程结束，请查看工程目录下的build.json文件。'));
-						return false;
-					} else if (data.env === 'daily') {
-						platformHost = 'http://platformdev.100credit.com';
-						isPublish = true;
-					} else if (data.env === 'pre') {
-						platformHost = 'http://platform.100credit.com';
-						isPublish = true;
-					} else if (data.env === 'production') {
-						platformHost = 'http://platform.100credit.com';
-						isPublish = true;
-					} else if (data.env === 'production-build') { // 使用线上构建方式，在本地完成构建，但不发布
-						isPublish = false;
+				if (data) {
+					// var platformHost = 'http://platform.100credit.com';
+					var platformHost = false;
+					var deployDoAPI = false;
+					co(function*() {
+						var filename = path.join(envPath.cwdPath, 'build.json');
+						console.log(successGreen('gulp deploy --entry ' + filename + ' --env ' + data.env));
+						var jsonData = JSON.stringify(data);
 						try {
-							yield execThunk('gulp deploy --entry ' + filename + ' --env production'); // 在本地进行线上构建
-						} catch (e) {
-							console.log(errorRed('本地线上构建失败！'));
-							console.log(errorRed(JSON.stringify(e)));
+							fs.writeFileSync(filename, jsonData);
+							console.log(successGreen('build.json创建成功'));
+						} catch (err) {
+							console.log(errorRed('build.json写入失败，请检查该文件'));
+							console.log(errorRed(JSON.stringify(err)));
 						}
-					}
-					try {
-						if (isPublish) {
-							var resp = yield handleApi({ // 调用发布接口
-								url: configure.publishAPI,
-								form: data
-							});
-							var res = {};
+						if (data.env === 'local') { // 默认只生成build.json
+							isPublish = false;
+							console.log(successGreen('生成发布配置成功，请查看工程目录下的build.json文件。'));
 							try {
-								res = JSON.parse(resp[1]); // 获取res.body
+								yield execThunk('gulp deploy --entry ' + filename + ' --env daily'); // 在本地进行线上构建
+								console.log(successGreen('本地日常构建完成!'));
 							} catch (e) {
-								console.log(errorRed('发布接口返回异常'));
+								console.log(errorRed('本地日常构建失败！'));
 								console.log(errorRed(JSON.stringify(e)));
 							}
-							if (res.code == 200) {
-								console.log(successGreen('正在进行' + data.env + '发布:' + res.data.publishKey));
-								console.log(successGreen('请在以下页面中查看发布进度: ' + platformHost + '/awp/logmonitor?f=' + data.appName + '/' + res.data.publishKey + '.log'));
-							} else {
-								console.log(errorRed('发布异常'));
-								console.log(errorRed(JSON.stringify(res)));
+						} else if (data.env === 'daily') {
+							isPublish = true;
+							try {
+								platformHost = configure.publishAPI[data.env].host;
+								deployDoAPI = platformHost + configure.publishAPI[data.env].deployDo;
+							} catch (err) {
+								return console.log(errorRed('config.js中的publishAPI.daily字段异常.发布结束'));
+							}
+						} else if (data.env === 'pre') {
+							isPublish = true;
+							try {
+								platformHost = configure.publishAPI[data.env].host;
+								deployDoAPI = platformHost + configure.publishAPI[data.env].deployDo;
+							} catch (err) {
+								return console.log(errorRed('config.js中的publishAPI.pre字段异常.发布结束'));
+							}
+						} else if (data.env === 'production') {
+							isPublish = true;
+							try {
+								platformHost = configure.publishAPI[data.env].host;
+								deployDoAPI = platformHost + configure.publishAPI[data.env].deployDo;
+							} catch (err) {
+								return console.log(errorRed('config.js中的publishAPI.production字段异常.发布结束'));
+							}
+						} else if (data.env === 'production-build') { // 使用线上构建方式，在本地完成构建，但不发布
+							isPublish = false;
+							try {
+								yield execThunk('gulp deploy --entry ' + filename + ' --env production'); // 在本地进行线上构建
+							} catch (e) {
+								console.log(errorRed('本地线上构建失败！'));
+								console.log(errorRed(JSON.stringify(e)));
 							}
 						}
-					} catch (e) {
-						console.log(errorRed('发布异常'));
-						console.log(errorRed(JSON.stringify(e)));
-					}
-					console.log(successGreen('操作完成。'));
-				});
+						try {
+							if (isPublish && platformHost && deployDoAPI) {
+								var resp = yield handleApi({ // 调用发布接口
+									url: deployDoAPI,
+									form: data
+								});
+								var res = {};
+								try {
+									res = JSON.parse(resp[1]); // 获取res.body
+								} catch (e) {
+									console.log(errorRed('发布接口返回异常'));
+									console.log(errorRed(JSON.stringify(e)));
+								}
+								if (res.code == 200) {
+									console.log(successGreen('正在进行' + data.env + '发布:' + res.data.publishKey));
+									console.log(successGreen('请在以下页面中查看发布进度: ' + platformHost + '/awp/logmonitor?f=' + data.appName + '/' + res.data.publishKey + '.log'));
+								} else {
+									console.log(errorRed('发布异常'));
+									console.log(errorRed(JSON.stringify(res)));
+								}
+							}
+						} catch (e) {
+							console.log(errorRed('发布异常'));
+							console.log(errorRed(JSON.stringify(e)));
+						}
+						console.log(successGreen('操作完成。'));
+					});
+				} else {
+					console.log(errorRed('发布结束：您没有选择任何页面。'));
+				}
 			});
 		});
 	}).on('--help', function() {
@@ -767,7 +799,12 @@ program
 		});
 
 		co(function*() {
-			configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			try {
+				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+			} catch (e) {
+				console.log(errorRed('警告：当前不是git开发环境！'))
+			}
+			// configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
 			buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
 			deployJSON.jsEntry = buildInfos.autoGetEntry;
 			deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html

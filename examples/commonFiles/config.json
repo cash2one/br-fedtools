@@ -1,24 +1,41 @@
 {
 	"appName": "",
-	"publish": {
-		"daily": [{
-			"host": "192.168.180.10",
-			"path": "/opt/www/build/"
-		}],
-		"pre": [{
-			"host": "123.57.42.161",
-			"path": "/opt/www/build/"
-		}],
-		"online": [{
-			"host": "101.201.199.232",
-			"path": "/opt/www/build/"
-		}, {
-			"host": "123.57.74.74",
-			"path": "/opt/www/build/"
-		}]
-	},
+	"remotes": "",
 	"version": "",
-	"bid-js-entry": {},
+	"cdnhost": "",
+	"publishAPI": {
+		"daily": {
+			"host": "http://platformdev.100credit.com",
+			"deployDo": "/api/awp/publish.do"
+		},
+		"pre": {
+			"host": "http://platform.100credit.com",
+			"deployDo": "/api/awp/publish.do"
+		},
+		"production": {
+			"host": "http://platform.100credit.com",
+			"deployDo": "/api/awp/publish.do"
+		}
+	},
+	"publish": {
+		"daily": {
+			"host": ["192.168.180.10", "192.168.180.26"],
+			"path": "/opt/www/build/"
+		},
+		"pre": {
+			"host": ["123.57.42.161"],
+			"path": "/opt/www/build/"
+		},
+		"production": {
+			"host": ["101.201.199.232", "123.57.74.74"],
+			"path": "/opt/www/build/"
+		},
+		"tag": {
+			"cdnHost": ["192.168.23.216", "192.168.23.217"],
+			"htmlHost": ["123.57.42.161"],
+			"path": "/opt/www/build/"
+		}
+	},
 	"alias": {
 		"zepto": "webpack-zepto"
 	},
