@@ -40,6 +40,18 @@ var request = require('request');
 var handleApi = thunkify(request.post);
 var execThunk = thunkify(exec);
 
+var setConfigVersion = thunkify(function(version, callback) {
+	console.log('vvvvvvvvvv')
+	console.log('vvvvvvvvvv')
+	console.log(version)
+	console.log('vvvvvvvvvv')
+	console.log('vvvvvvvvvv')
+	var branch = version ? version : false;
+	gitTools.setConfigVersionThunk(branch, function(err, config) {
+		return callback(err, config);
+	});
+});
+
 program
 	.allowUnknownOption() //不报错误
 	.version(appInfo.version)
@@ -119,166 +131,6 @@ program
 		process.exit(1);
 	});
 
-// program
-// 	.command('build1')
-// 	.alias('b')
-// 	.description('进行构建')
-// 	.option('-a, --buildall', '根据build全部页面')
-// 	.option('-d, --publishdaily', '构建并发布发布日常')
-// 	.option('-p, --publishpre', '构建并发布发布ali云预发服务器')
-// 	.option('-o, --publishonline', '构建并发布发布ali云[线上]服务器')
-// 	.action(function(cmd, options) {
-// 		var env = '本地';
-// 		if (false && program.args[0].online) { // 远端构建
-// 			env = '远端';
-// 		} else { // 本地构建
-// 			var commands = 'gulp build';
-// 			var entrySet = {
-// 				jsEntry: {},
-// 				htmlEntry: [] // 为空时将迁移全部html
-// 			};
-// 			var inquirerParams = [];
-// 			var callbackFn = function() {}; // 构建成功后的回调
-// 			var getInquirerBuild = function() { // 根据 -a 参数判断对哪些页面进行构建
-// 				if (program.args[0].buildall) { // 对所有页面进行build
-
-// 				} else { // 根据选择进行build
-// 					inquirerParams.push({
-// 						type: 'checkbox',
-// 						name: 'selectedEntry',
-// 						message: '请选择需要进行构建的页面:',
-// 						choices: buildInfos.autoGetHtml.keys
-// 					});
-// 				}
-// 			}
-// 			if (program.args[0].publishdaily || program.args[0].publishpre || program.args[0].publishonline) {
-// 				inquirerParams.push({
-// 					type: 'input',
-// 					name: 'userName',
-// 					message: '请输入用户名'
-// 				});
-// 				getInquirerBuild();
-// 				callbackFn = function(userName) {
-// 					if (userName) { // 校验用户名
-// 						var doPublish = function(confArr) {
-// 							var scpStartTime = new Date().getTime();
-// 							// exec('scp -r ./build root@101.200.132.102:/home', {
-// 							// exec('scp -r ./build/ ' + userName + '@192.168.180.10:/opt/www/minions', {
-// 							// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
-// 							// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
-// 							// console.log('scp -r ./build/* ' + userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
-// 							confArr.forEach(function(item) {
-// 								var scpCmd = 'scp -r ./build/* ' + userName + '@' + item.host + ':' + item.path + userConfig.appName
-// 								console.log(scpCmd);
-// 								exec(scpCmd, {
-// 									async: true
-// 								}, function(code, output) {
-// 									var nowTime = new Date().getTime();
-// 									console.log(successGreen('已成功上传到 [' + serverType + ']（' + item.host + '） 服务器!'));
-// 									console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
-// 								});
-// 							});
-// 						}
-// 						var serverType = '默认';
-// 						try {
-// 							if (program.args[0].publishdaily) { // 发布日常
-// 								serverType = '日常';
-// 								doPublish(userConfig.publish.daily)
-// 							} else if (program.args[0].publishpre) { // 发布预发阿里云
-// 								serverType = '预发';
-// 								doPublish(userConfig.publish.pre)
-// 							} else if (program.args[0].publishonline) { // 发布线上阿里云
-// 								serverType = '线上';
-// 								doPublish(userConfig.publish.online)
-// 							} else {
-// 								warnYellow('发布未成功，因为您没有指定正确的发布环境');
-// 							}
-// 						} catch (e) {
-// 							console.log(errorRed('config.json发布配置错误，' + serverType + '发布失败'));
-// 							console.log(errorRed(e));
-// 						}
-// 					} else {
-// 						console.log(errorRed('上传失败，无法解析您输入的userName'));
-// 					}
-// 				}
-// 			} else { // 不发布，仅build
-// 				getInquirerBuild();
-// 			}
-
-// 			inquirer.prompt(inquirerParams).then(function(answers) {
-// 				entrySet.userName = answers.userName ? answers.userName : null;
-// 				if (!program.args[0].buildall) { // 通过选择进行build
-// 					answers.selectedEntry.forEach(function(se, index) {
-// 						for (var htmlKey in buildInfos.autoGetHtml.jsEntry) {
-// 							if (htmlKey.split(se).length > 1) {
-// 								var tmpSrc = './' + htmlKey + '.html';
-// 								if (userConfig.version) {
-// 									tmpSrc = tmpSrc.replace(userConfig.version + '/', '');
-// 								}
-// 								if (buildInfos.autoGetHtml.jsEntry[htmlKey]) {
-// 									entrySet.jsEntry[htmlKey] = buildInfos.autoGetHtml.jsEntry[htmlKey];
-// 								}
-
-// 								entrySet.htmlEntry.push(tmpSrc);
-// 								return true;
-// 							}
-// 						}
-// 					});
-// 				} else { // buildall 自动根据匹配规则（匹配所有src/p/**/index.js）寻找JS入口文件并打包
-// 					entrySet.jsEntry = buildInfos.autoGetEntry;
-// 				}
-
-// 				var chmod777 = function(callback) {
-// 					var start777 = new Date().getTime();
-// 					exec('chmod -R 777 ./build', {
-// 						async: true,
-// 						silent: program.quiet
-// 					}, function(code, output) {
-// 						var end777 = new Date().getTime();
-// 						console.log(successGreen('修改build权限完成，共耗时:' + (end777 - start777) / 1000, 's'));
-// 						// chmod777();
-// 					});
-// 				}
-
-// 				var filename = path.join(envPath.cwdPath, 'build.json');
-// 				var data = JSON.stringify(entrySet);
-// 				fs.writeFile(filename, data, function(err) {
-// 					if (!err) {
-// 						console.log(successGreen('build.json创建成功'));
-// 						commands += ' --entry ' + filename;
-// 						var initTime = new Date().getTime();
-// 						console.log(commands)
-// 						exec(commands, {
-// 							async: true,
-// 							silent: program.quiet
-// 						}, function(code, output) {
-// 							chmod777();
-// 							console.log('done 777')
-// 							console.log('done 777')
-// 							console.log('done 777')
-// 							callbackFn(entrySet.userName);
-// 							var nowTime = new Date().getTime();
-// 							console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-// 							console.log(successGreen('构建完毕!'));
-// 						});
-// 					} else {
-// 						console.log(errorRed('build.json写入失败，请检查该文件'));
-// 					}
-// 				});
-
-// 			});
-// 		}
-// 		console.log(successGreen('开启' + env + '构建'));
-
-// 	}).on('--help', function() {
-// 		console.log('  举个栗子:');
-// 		console.log('');
-// 		console.log('    bid build -d|--publishdaily   :   本地构建并发布到日常服务器');
-// 		console.log('    bid build -p|--publishpre   :   本地构建并发布到预发服务器');
-// 		console.log('    bid build -o|--online   :   本地构建并发布到线上服务器');
-// 		console.log('');
-// 		process.exit(1);
-// 	});
 
 program
 	.command('build')
@@ -288,15 +140,15 @@ program
 		var deployJSON = null; // build.json源
 		var isPublish = false; // 是否构建后调用发布接口
 		var configure = {}; // 读取自本地工程config.json配置
-		var setConfigVersion = thunkify(function(callback) { // 检测当前git所处分支，并配置config.json
-			gitTools.setConfigVersionThunk(function(err, config) {
+		/*var setConfigVersion = thunkify(function(callback) { // 检测当前git所处分支，并配置config.json
+			gitTools.setConfigVersionThunk(false, function(err, config) {
 				return callback(err, config);
 			});
-		});
+		});*/
 
 		co(function*() {
 			try {
-				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+				configure = yield setConfigVersion(false); // 检测git分支，设置config.version，并返回新的分支
 			} catch (e) {
 				console.log(errorRed('警告：当前不是git开发环境！'))
 			}
@@ -395,8 +247,9 @@ program
 								// 由于服务器端免密钥或交互式shell需要运维配合，开发成本较高，必所以暂时使用手工创建日常服务器项目目录的办法；
 								// 日常发布时，须保证服务器上已经存在项目文件夹，否则需要手动新建，并将owner设置为www,权限777,否则可能会影响日常发布
 								// console.log('scp -r ./build/* ' + userName + '@' + publishHost + ':' + publishPath + userConfig.appName)
-								confArr.forEach(function(item) {
-									var scpCmd = 'scp -r ./deploy/build/* ' + userName + '@' + item.host + ':' + item.path + userConfig.appName
+								var $path = confArr.path;
+								confArr.host.forEach(function(host) {
+									var scpCmd = 'scp -r ./deploy/build/* ' + userName + '@' + host + ':' + $path + userConfig.appName
 									console.log(scpCmd);
 									exec(scpCmd, {
 										async: true
@@ -603,15 +456,15 @@ program
 		var deployJSON = null; // build.json源
 		var isPublish = false; // 是否构建后调用发布接口
 		var configure = {}; // 读取自本地工程config.json配置
-		var setConfigVersion = thunkify(function(callback) { // 检测当前git所处分支，并配置config.json
-			gitTools.setConfigVersionThunk(function(err, config) {
+		/*var setConfigVersion = thunkify(function(callback) { // 检测当前git所处分支，并配置config.json
+			gitTools.setConfigVersionThunk(false, function(err, config) {
 				return callback(err, config);
 			});
-		});
+		});*/
 
 		co(function*() {
 			try {
-				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
+				configure = yield setConfigVersion(false); // 检测git分支，设置config.version，并返回新的分支
 			} catch (e) {
 				console.log(errorRed('警告：当前不是git开发环境！'))
 			}
@@ -786,56 +639,57 @@ program
 
 program
 	.command('tag') // 由git hock触发shell脚本，shell拉取指定tag之后，调用bid tag,
-	.alias('p')
+	.alias('t')
+	.option('-b, --branch [tag]', 'tag版本号', null)
 	.description('执行git tag，通过sh，全量发布Javascript至cdn；并且使用线上cdn js资源构建及发布html到预发环境')
 	.action(function(cmd, options) {
 		var deployJSON = {};
 		var configure = {};
+		var tagBranch = program.args[0].branch;
 
-		var setConfigVersion = thunkify(function(callback) {
-			gitTools.setConfigVersionThunk(function(err, config) {
-				return callback(err, config);
+		if (!tagBranch) { // 没有传递tag分支的名称，则返回错误
+			console.log(errorRed('error'));
+			console.log(errorRed('tag分支名称为空，失败'));
+		} else {
+			co(function*() {
+				try {
+					configure = yield setConfigVersion(tagBranch); // 检测git分支，设置config.version，并返回新的分支
+				} catch (e) {
+					console.log(errorRed('警告：当前不是git开发环境！'))
+				}
+				buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
+				deployJSON.jsEntry = buildInfos.autoGetEntry;
+				deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
+				deployJSON.version = configure.version; // Git分支版本
+				deployJSON.appName = configure.appName; // 应用名
+				deployJSON.remotes = configure.remotes; // Git远端地址
+				deployJSON.publish = configure.publish; // 发布配置信息
+				deployJSON.cdnhost = configure.cdnhost; // 静态资源cdn域名
+				deployJSON.env = 'tag'; // 将环境设置为Tag
+
+				var filename = path.join(envPath.cwdPath, 'build.json');
+				var jsonData = JSON.stringify(deployJSON);
+				try {
+					fs.writeFileSync(filename, jsonData);
+					console.log(successGreen('build.json创建成功'));
+				} catch (err) {
+					console.log(errorRed('build.json写入失败，请检查该文件'));
+					console.log(errorRed(err));
+				}
+				var commands = 'gulp deploy --entry ' + filename + ' --env tag';
+				console.log(successGreen(commands));
+				var initTime = new Date().getTime();
+				exec(commands, {
+					async: true,
+					silent: program.quiet
+				}, function(code, output) {
+					var nowTime = new Date().getTime();
+					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
+					console.log(successGreen('javascripts资源构建完毕!'));
+				});
+
 			});
-		});
-
-		co(function*() {
-			try {
-				configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
-			} catch (e) {
-				console.log(errorRed('警告：当前不是git开发环境！'))
-			}
-			// configure = yield setConfigVersion(); // 检测git分支，设置config.version，并返回新的分支
-			buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
-			deployJSON.jsEntry = buildInfos.autoGetEntry;
-			deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
-			deployJSON.version = configure.version; // Git分支版本
-			deployJSON.appName = configure.appName; // 应用名
-			deployJSON.remotes = configure.remotes; // Git远端地址
-			deployJSON.publish = configure.publish; // 发布配置信息
-			deployJSON.cdnhost = configure.cdnhost; // 静态资源cdn域名
-
-			var filename = path.join(envPath.cwdPath, 'build.json');
-			var jsonData = JSON.stringify(deployJSON);
-			try {
-				fs.writeFileSync(filename, jsonData);
-				console.log(successGreen('build.json创建成功'));
-			} catch (err) {
-				console.log(errorRed('build.json写入失败，请检查该文件'));
-				console.log(errorRed(err));
-			}
-			var commands = 'gulp deploy --entry ' + filename + ' --env tag';
-			console.log(successGreen(commands));
-			var initTime = new Date().getTime();
-			exec(commands, {
-				async: true,
-				silent: program.quiet
-			}, function(code, output) {
-				var nowTime = new Date().getTime();
-				console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-				console.log(successGreen('javascripts资源构建完毕!'));
-			});
-
-		});
+		}
 
 	}).on('--help', function() {
 		console.log('  举个栗子:');
