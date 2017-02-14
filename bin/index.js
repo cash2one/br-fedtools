@@ -41,11 +41,6 @@ var handleApi = thunkify(request.post);
 var execThunk = thunkify(exec);
 
 var setConfigVersion = thunkify(function(version, callback) {
-	console.log('vvvvvvvvvv')
-	console.log('vvvvvvvvvv')
-	console.log(version)
-	console.log('vvvvvvvvvv')
-	console.log('vvvvvvvvvv')
 	var branch = version ? version : false;
 	gitTools.setConfigVersionThunk(branch, function(err, config) {
 		return callback(err, config);
@@ -255,7 +250,7 @@ program
 										async: true
 									}, function(code, output) {
 										var nowTime = new Date().getTime();
-										console.log(successGreen('已成功上传到 [' + serverType + ']（' + item.host + '） 服务器!'));
+										console.log(successGreen('已成功上传到 [' + serverType + ']（' + host + '） 服务器!'));
 										console.log(infoBlue('上传耗时:' + (nowTime - scpStartTime) / 1000, 's'));
 									});
 								});
@@ -637,15 +632,30 @@ program
 		process.exit(1);
 	});
 
+/*
+ * bid tag
+ * 描述：由git hock触发shell脚本，shell拉取指定tag之后，调用bid tag,
+ * 参数说明：
+ *	-b [分支号] : <require> 要构建的publish tag分支号。必填
+ *	-l : <optional> 是否进行本地构建。可选
+ *	-k [发布ID（publishKey）] : <optional> 发布ID。当在本地构建时，此项无用；当执行发布任务时，则为必填，由git hooks出发发布任务，由发布服务端调用脚本执行bid tag
+ */
 program
-	.command('tag') // 由git hock触发shell脚本，shell拉取指定tag之后，调用bid tag,
+	.command('tag')
 	.alias('t')
-	.option('-b, --branch [tag]', 'tag版本号', null)
+	.option('-b, --branch [branch]', 'tag版本号')
+	.option('-l, --local [local]', '是否进行本地构建', false)
+	.option('-k, --publishkey [publishkey]', '发布ID（publishKey）', false)
 	.description('执行git tag，通过sh，全量发布Javascript至cdn；并且使用线上cdn js资源构建及发布html到预发环境')
+	.parse(process.argv)
 	.action(function(cmd, options) {
+
 		var deployJSON = {};
 		var configure = {};
 		var tagBranch = program.args[0].branch;
+		var localBuild = program.args[0].local;
+		var publishKey = program.args[0].publishkey;
+		publishKey = (publishKey === true) ? false : publishKey;
 
 		if (!tagBranch) { // 没有传递tag分支的名称，则返回错误
 			console.log(errorRed('error'));
@@ -659,7 +669,8 @@ program
 				}
 				buildInfos = require('../lib/util/getEntry')(configure.version); // 使用新的git version重新更新buildInfo
 				deployJSON.jsEntry = buildInfos.autoGetEntry;
-				deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
+				// deployJSON.htmlEntry = []; // 数组为空时，gulp默认构建全部./src/p/**/*.html
+				deployJSON.htmlEntry = buildInfos.autoGetHtml.originList; // 取全部*.html，进行tag预发发布，并写入config.json中，用于生成及判断子任务upload状态
 				deployJSON.version = configure.version; // Git分支版本
 				deployJSON.appName = configure.appName; // 应用名
 				deployJSON.remotes = configure.remotes; // Git远端地址
@@ -678,15 +689,52 @@ program
 				}
 				var commands = 'gulp deploy --entry ' + filename + ' --env tag';
 				console.log(successGreen(commands));
-				var initTime = new Date().getTime();
-				exec(commands, {
-					async: true,
-					silent: program.quiet
-				}, function(code, output) {
-					var nowTime = new Date().getTime();
-					console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
-					console.log(successGreen('javascripts资源构建完毕!'));
-				});
+
+				if (localBuild) { // 本地构建
+					var initTime = new Date().getTime();
+					exec(commands, {
+						async: true,
+						silent: program.quiet
+					}, function(code, output) {
+						var nowTime = new Date().getTime();
+						console.log(infoBlue('耗时:' + (nowTime - initTime) / 1000, 's'));
+						console.log(successGreen('javascripts资源构建完毕!'));
+					});
+				} else { // 上传配置，云端构建及发布
+					if (publishKey) {
+						deployJSON.publishKey = publishKey; // 发布ID
+						try {
+							var platformHost = configure.publishAPI.tag.host;
+							var deployDoAPI = platformHost + configure.publishAPI.tag.deployDo;
+							var resp = yield handleApi({ // 调用发布接口
+								url: deployDoAPI,
+								form: deployJSON
+							});
+							var res = {};
+							try {
+								res = JSON.parse(resp[1]); // 获取res.body
+							} catch (e) {
+								console.log(errorRed('发布接口返回异常'));
+								console.log(e);
+								console.log("error"); // 通知shell执行失败
+							}
+							if (res.code == 200) {
+								console.log("success"); // 通知shell执行成功
+							} else {
+								console.log(errorRed('发布异常'));
+								console.log(errorRed(JSON.stringify(res)));
+								console.log("error"); // 通知shell执行失败
+							}
+						} catch (e) {
+							console.log(errorRed('发布异常'));
+							console.log(e);
+							console.log("error"); // 通知shell执行失败
+						}
+					} else {
+						console.log(errorRed('发布异常,没有publishKey'));
+						console.log("error"); // 通知shell执行失败
+					}
+				}
 
 			});
 		}

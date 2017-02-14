@@ -175,7 +175,7 @@ gulp.task('buildhtml', ['init', 'clean', 'buildLess'], function(callback) { // �
 	// return gulp.src('./src/p/**/*.html')
 	var htmlSrc = buildInfos && buildInfos && buildInfos.htmlEntry && buildInfos.htmlEntry.length ? buildInfos.htmlEntry : './src/p/**/*.html';
 	// 如果htmlEntry为空数组，则迁移全部html
-	if (env === 'production' || env === 'tag') { // 如果是发布线上，则使用CDN路径替换js引用
+	if (env === 'production') { // 如果是发布线上，则使用CDN路径替换js引用
 		gulp.src(htmlSrc, {
 				base: './src/p'
 			})
@@ -188,6 +188,24 @@ gulp.task('buildhtml', ['init', 'clean', 'buildLess'], function(callback) { // �
 			.pipe(replace(/<(html|body)>/g, ''))
 			.pipe(replace(/\@version/g, v))
 			.pipe(replace(/\@cdnhost/g, buildInfos.cdnhost + '/' + buildInfos.appName))
+			.pipe(htmlmin({
+				collapseWhitespace: true
+			}))
+			.pipe(gulp.dest(buildConfig.htmlBuildPath + 'src/p/'));
+	} else if (env === 'tag') { // git_hooks触发js发布，
+		gulp.src(htmlSrc, {
+				base: './src/p'
+			})
+			.pipe(inlinesource())
+			/*.pipe(inlineCss({
+				applyStyleTags: true,
+				applyLinkTags: false,
+				removeStyleTags: false
+			}))*/
+			.pipe(replace(/<(html|body)>/g, ''))
+			.pipe(replace(/\@version/g, v))
+			.pipe(replace(/\@cdnhost/g, buildInfos.cdnhost + '/' + buildInfos.appName))
+			.pipe(replace(/\<\/body\>/, '<script>var node=document.createElement("H1");var textnode=document.createTextNode("这是最终预发测试页面");node.style.width="100%";node.style.width="100%";node.style.position="fixed";node.style["line-height"]="100px";node.style.top="50px";node.style.left="0";node.style["font-size"]="30px";node.style["text-align"]="center";node.style["background-color"]="yellow";node.style.color="#000";node.appendChild(textnode);document.body.appendChild(node);setTimeout(function(){document.body.removeChild(node);},6000);</script></body>'))
 			.pipe(htmlmin({
 				collapseWhitespace: true
 			}))
